@@ -13,12 +13,12 @@ class AmebaConfig {
     + threhold_of_lostness_weight_coefficient: float
     + visible_width: int
     + visible_height: int
-    + initial_energy: int
+    + initial_energy: float
     + energy_lost_per_move: function
 }
 
 class GameConfig {
-    + total_energy: int
+    + total_energy: float
     + play_desk: PlayDeskConfig
     + ameba: AmebaConfig
 
@@ -29,9 +29,12 @@ GameConfig --> AmebaConfig : contains
 
 
 class PlayDesk {
-    + food_positions: list[Position]
     + amebas: list[Ameba]
+    - _width: int
+    - _height: int
+    - food_positions: list[Position]
     + generate_food()
+    + get_total_energy(): float
     + get_visible_area(position: Position): list[Position], list[Ameba]
     + __init__(config: PlayDeskConfig)
 }
@@ -65,9 +68,11 @@ class Position {
 }
 
 class AmebaHistory {
+    step: int
     position: Position
     energy: float
     visible_food_positions: list
+    visible_ameba_positions: list
 }
 
 
@@ -75,26 +80,27 @@ class Ameba {
     + position: Position
     + energy: float
     + neural_network: NeuralNetwork
-    - play_desk: PlayDesk
     - history: list
     + __init__(config: AmebaConfig)
     + move()
-    - divide() : Ameba, Ameba
-    - adjust_neural_network()
+    + check_and_divide() : Ameba, Ameba
+    - eat_and_adjust_neural_network()
     - populate_history()
 }
 
 Ameba --> AmebaHistory : contains
 Ameba --> NeuralNetwork : contains
-Ameba --> PlayDesk : uses
+Ameba <-- PlayDesk : contains
 
 
 class Game {
-    play_desk: PlayDesk
     + {static} load_config() : GameConfig
+    + play_desk: PlayDesk
     + __init__(config: GameConfig)
     + create_first_ameba() : Ameba
     + run()
+    + do_one_step()
+    + get_info()
 }
 
 Game --> PlayDesk : contains
