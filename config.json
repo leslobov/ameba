@@ -1,0 +1,15 @@
+{
+    "total_energy": 10000.0,
+    "play_desk": {
+        "width": 1024,
+        "height": 768
+    },
+    "ameba": {
+        "neural_network_hidden_layers": 3,
+        "neurons_on_layer": 16,
+        "threhold_of_lostness_weight_coefficient": 0.2,
+        "visible_width": 5,
+        "visible_height": 5,
+        "initial_energy": 100.0
+    }
+}

@@ -1,8 +1,19 @@
+from dataclasses import dataclass
 from .play_desk_config import PlayDeskConfig
 from .ameba_config import AmebaConfig
 
+@dataclass
 class GameConfig:
-    def __init__(self, total_energy: float, play_desk: PlayDeskConfig, ameba: AmebaConfig):
-        self.total_energy = total_energy
-        self.play_desk = play_desk
-        self.ameba = ameba
+    total_energy: float
+    play_desk: PlayDeskConfig
+    ameba: AmebaConfig
+
+    @staticmethod
+    def from_dict(config_data: dict) -> "GameConfig":
+        play_desk = PlayDeskConfig.from_dict(config_data["play_desk"])
+        ameba = AmebaConfig.from_dict(config_data["ameba"])
+        return GameConfig(
+            total_energy=config_data["total_energy"],
+            play_desk=play_desk,
+            ameba=ameba,
+        )

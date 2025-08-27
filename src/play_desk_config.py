@@ -1,4 +1,13 @@
+from dataclasses import dataclass
+
+@dataclass
 class PlayDeskConfig:
-    def __init__(self, width: int, height: int):
-        self.width = width
-        self.height = height
+    width: int
+    height: int
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PlayDeskConfig":
+        return cls(
+            width=data["width"],
+            height=data["height"],
+        )
