@@ -1,0 +1,104 @@
+@startuml
+
+
+class PlayDeskConfig {
+    + width: int
+    + height: int
+}
+
+class AmebaConfig {
+    + neural_network_hidden_layers: int
+    + neurons_on_layer: int
+    + neurons_qnt_add: function
+    + threhold_of_lostness_weight_coefficient: float
+    + visible_width: int
+    + visible_height: int
+    + initial_energy: int
+    + energy_lost_per_move: function
+}
+
+class GameConfig {
+    + total_energy: int
+    + play_desk: PlayDeskConfig
+    + ameba: AmebaConfig
+
+}
+
+GameConfig --> PlayDeskConfig : contains
+GameConfig --> AmebaConfig : contains
+
+
+class PlayDesk {
+    + food_positions: list[Position]
+    + amebas: list[Ameba]
+    + generate_food()
+    + get_visible_area(position: Position): list[Position], list[Ameba]
+    + __init__(config: PlayDeskConfig)
+}
+
+
+class NeuronConnection {
+    to_neuron: Neuron
+    weight: float
+}
+
+
+class Neuron {
+    id: int
+    connections: NeuronConnection[]
+}
+
+
+Neuron --> NeuronConnection : contains
+
+
+class NeuralNetwork {
+    neuron: Neuron[]
+}
+
+NeuralNetwork --> Neuron : contains
+
+
+class Position {
+    x: int
+    y: int
+}
+
+class AmebaHistory {
+    position: Position
+    energy: float
+    visible_food_positions: list
+}
+
+
+class Ameba {
+    + position: Position
+    + energy: float
+    + neural_network: NeuralNetwork
+    - play_desk: PlayDesk
+    - history: list
+    + __init__(config: AmebaConfig)
+    + move()
+    - divide() : Ameba, Ameba
+    - adjust_neural_network()
+    - populate_history()
+}
+
+Ameba --> AmebaHistory : contains
+Ameba --> NeuralNetwork : contains
+Ameba --> PlayDesk : uses
+
+
+class Game {
+    play_desk: PlayDesk
+    + {static} load_config() : GameConfig
+    + __init__(config: GameConfig)
+    + create_first_ameba() : Ameba
+    + run()
+}
+
+Game --> PlayDesk : contains
+Game --> GameConfig : contains
+
+
+@enduml
