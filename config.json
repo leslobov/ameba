@@ -1,6 +1,7 @@
 {
-    "total_energy": 10000.0,
     "play_desk": {
+        "total_energy": 10000.0,
+        "energy_per_food": 50.0,
         "width": 1024,
         "height": 768
     },

@@ -2,6 +2,8 @@
 
 
 class PlayDeskConfig {
+    + total_energy: float
+    + energy_per_food
     + width: int
     + height: int
 }
@@ -18,7 +20,6 @@ class AmebaConfig {
 }
 
 class GameConfig {
-    + total_energy: float
     + play_desk: PlayDeskConfig
     + ameba: AmebaConfig
 

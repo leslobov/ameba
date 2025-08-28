@@ -1,4 +1,4 @@
-from .position import Position
+from .utils.position import Position
 
 class AmebaHistory:
     def __init__(

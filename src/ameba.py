@@ -1,13 +1,13 @@
-from .position import Position
-from .ameba_config import AmebaConfig
+from .utils.position import Position
+from .conf.ameba_config import AmebaConfig
 from .neural_network import NeuralNetwork
 from .ameba_history import AmebaHistory
 
 class Ameba:
-    def __init__(self, config: AmebaConfig):
-        self.position = None  # Should be set to Position
-        self.energy = config.initial_energy
-        self.neural_network = None  # Should be set to NeuralNetwork
+    def __init__(self, position: Position, energy: float, neural_network: NeuralNetwork):
+        self.position = position
+        self.energy = energy
+        self.neural_network = neural_network
         self.history = []
 
     def move(self):
