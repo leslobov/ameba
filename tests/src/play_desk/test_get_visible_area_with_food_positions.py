@@ -1,10 +1,10 @@
 import unittest
-from unittest.mock import MagicMock
 from src.play_desk import PlayDesk
 from src.play_desk import Position
 from src.play_desk import Ameba
 from src.play_desk import PlayDeskConfig
 from src.conf.ameba_config import AmebaConfig
+from src.food import Food
 
 class TestPlayDesk(unittest.TestCase):
 
@@ -21,14 +21,19 @@ class TestPlayDesk(unittest.TestCase):
         )
         ameba = Ameba(config=ameba_config, position=Position(0, 1), energy=50, neural_network=None)
         play_desk.amebas = [ameba]
-        play_desk.food_positions = [Position(1, 1), Position(3, 3), Position(6, 0), Position(2, 6)]
+        play_desk.foods = [
+            Food(energy=1, position=Position(1, 1)),
+            Food(energy=2, position=Position(3, 3)),
+            Food(energy=3, position=Position(2, 6)),
+            Food(energy=4, position=Position(6, 0)),
+        ]
 
         expected_area = [
             [0, 0, 0, 0, 0],
-            [0, 1, 0, 0, 0],
+            [0, 4, 0, 0, 0],
             [0, 0, 0, 0, 0],
             [0, 0, 1, 0, 0],
-            [1, 0, 0, 0, 0]
+            [3, 0, 0, 0, 0]
         ]
         actual_area = play_desk._get_visible_area_with_food_positions(ameba)
         self.assertEqual(actual_area, expected_area)
