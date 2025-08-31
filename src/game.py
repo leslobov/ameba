@@ -37,4 +37,4 @@ class Game:
         position = self.play_desk.get_random_empty_position()
         energy = self.config.ameba.initial_energy
         neural_network = NeuralNetwork.generate_first_ameba_network()
-        return Ameba(position, energy, neural_network)
+        return Ameba(self.config.ameba, position, energy, neural_network)

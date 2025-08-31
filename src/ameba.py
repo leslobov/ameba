@@ -4,7 +4,8 @@ from .neural_network import NeuralNetwork
 from .ameba_history import AmebaHistory
 
 class Ameba:
-    def __init__(self, position: Position, energy: float, neural_network: NeuralNetwork):
+    def __init__(self, config: AmebaConfig, position: Position, energy: float, neural_network: NeuralNetwork):
+        self.config = config
         self.position = position
         self.energy = energy
         self.neural_network = neural_network
