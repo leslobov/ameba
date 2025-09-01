@@ -1,5 +1,6 @@
 from .neuron import Neuron
 
+
 class NeuralNetwork:
     @staticmethod
     def generate_first_ameba_network():

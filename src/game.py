@@ -1,11 +1,11 @@
 import json
 
 from src.ameba import Ameba
-from src.conf.ameba_config import AmebaConfig
 from src.neural_network import NeuralNetwork
 
 from .conf.game_config import GameConfig
 from .play_desk import PlayDesk
+
 
 class Game:
     def __init__(self, config: GameConfig):
@@ -17,7 +17,7 @@ class Game:
         with open(config_path, "r") as file_json:
             config_data = json.load(file_json)
         return GameConfig.from_dict(config_data)
-    
+
     def initialize_play_desk(self):
         first_ameba = self._create_first_ameba()
         self.play_desk.amebas.append(first_ameba)

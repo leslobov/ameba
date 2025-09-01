@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from .play_desk_config import PlayDeskConfig
 from .ameba_config import AmebaConfig
 
+
 @dataclass
 class GameConfig:
     play_desk: PlayDeskConfig
