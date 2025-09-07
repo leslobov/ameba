@@ -9,6 +9,7 @@ class AmebaConfig:
     visible_rows: int
     visible_columns: int
     initial_energy: float
+    lost_energy_per_move: float
 
     @classmethod
     def from_dict(cls, data: dict) -> "AmebaConfig":
@@ -21,6 +22,7 @@ class AmebaConfig:
             visible_rows=data["visible_rows"],
             visible_columns=data["visible_columns"],
             initial_energy=data["initial_energy"],
+            lost_energy_per_move=data["lost_energy_per_move"],
         )
 
     @staticmethod

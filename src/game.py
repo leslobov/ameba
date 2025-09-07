@@ -24,11 +24,11 @@ class Game:
         self.play_desk.generate_food()
 
     def run(self, iterations: int):
-        self.initialize_play_desk()
-        pass
+        for _ in range(iterations):
+            self.do_one_step()
 
     def do_one_step(self):
-        pass
+        self.play_desk.do_move_amebas()
 
     def get_info(self):
         pass
@@ -36,5 +36,8 @@ class Game:
     def _create_first_ameba(self):
         position = self.play_desk.get_random_empty_position()
         energy = self.config.ameba.initial_energy
-        neural_network = NeuralNetwork.generate_first_ameba_network()
+        neural_network = NeuralNetwork.generate_first_ameba_network(
+            self.config.ameba.neural_network_hidden_layers,
+            self.config.ameba.neurons_on_layer,
+        )
         return Ameba(self.config.ameba, position, energy, neural_network)

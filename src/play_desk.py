@@ -40,6 +40,25 @@ class PlayDesk:
             break
         return position
 
+    def do_move_amebas(self) -> None:
+        for ameba in self.amebas:
+            ameba.position += ameba.move(
+                self._get_visible_area_by_entities(
+                    ameba, self.foods, lambda food: food.energy
+                )
+            )
+            food_under_ameba = self._get_entity_by_position(ameba.position, self.foods)
+            if food_under_ameba is not None:
+                ameba.energy += food_under_ameba.energy
+                self.foods.remove(food_under_ameba)
+                ameba.eat_and_adjust_neural_network()
+            print(
+                "Ameba position: row= ",
+                ameba.position.row,
+                " col= ",
+                ameba.position.column,
+            )
+
     def _get_visible_area_by_entities(
         self,
         ameba: Ameba,
@@ -73,7 +92,7 @@ class PlayDesk:
         return food_energy + ameba_energy
 
     def _get_entity_by_position(
-        self, position: Position, entities: Sequence[DeskEntity]
+        self, position: Position, entities: T
     ) -> Optional[DeskEntity]:
         for entity in entities:
             if (
