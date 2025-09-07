@@ -1,5 +1,6 @@
 import torch
 
+from src.food import Food
 from src.abstract_classes.energy_item import EnergyItem
 from src.abstract_classes.position_item import PositionItem
 
@@ -22,6 +23,12 @@ class Ameba(PositionItem, EnergyItem):
         self._neural_network = neural_network
         self._history = []
 
+    def get_energy(self) -> float:
+        return self._energy
+
+    def get_position(self) -> Position:
+        return self._position
+
     def move(self, visible_area):
         self._neural_network.eval()
 
@@ -38,6 +45,11 @@ class Ameba(PositionItem, EnergyItem):
             tensor_predict = self._neural_network.predict(flat_visible_area_tensor)
 
         new_position = Position.move_according_prediction(tensor_predict.item())
+        entity_on_new_position = visible_area.get_entity_on_position(new_position)
+        if entity_on_new_position is not None and isinstance(
+            entity_on_new_position, Food
+        ):
+            entity_on_new_position.mark_deleted()
         return new_position
 
     def check_and_divide(self):
@@ -48,12 +60,6 @@ class Ameba(PositionItem, EnergyItem):
 
     def populate_history(self):
         pass
-
-    def get_energy(self) -> float:
-        return self._energy
-
-    def get_position(self) -> Position:
-        return self._position
 
     def _get_visible_area_as_energy_tensor(
         self, visible_area: list[list[EnergyItem]]

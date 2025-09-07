@@ -7,10 +7,16 @@ class Food(EnergyItem, PositionItem):
     def __init__(self, energy: float, position: Position):
         self._energy = energy
         self._position = position
-        self.is_deleted = False
+        self._is_deleted = False
+
+    def mark_deleted(self):
+        self._is_deleted = True
 
     def get_energy(self) -> float:
         return self._energy
 
     def get_position(self) -> Position:
         return self._position
+
+    def is_deleted(self) -> bool:
+        return self._is_deleted
