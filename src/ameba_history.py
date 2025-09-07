@@ -1,4 +1,4 @@
-from .utils.position import Position
+from src.shared_classes.position import Position
 
 
 class AmebaHistory:

@@ -2,15 +2,22 @@ import json
 
 from src.ameba import Ameba
 from src.neural_network import NeuralNetwork
+from src.shared_classes.visible_area import CalculateVisibleArea
 
-from .conf.game_config import GameConfig
-from .play_desk import PlayDesk
+from src.config_classes.game_config import GameConfig
+from src.play_desk import PlayDesk
 
 
 class Game:
     def __init__(self, config: GameConfig):
         self.config = config
-        self.play_desk = PlayDesk(config.play_desk)
+        calculate_visible_area = CalculateVisibleArea(
+            visible_rows=config.ameba.visible_rows,
+            visible_columns=config.ameba.visible_columns,
+            desk_columns=config.play_desk.columns,
+            desk_rows=config.play_desk.rows,
+        )
+        self.play_desk = PlayDesk(config.play_desk, calculate_visible_area)
 
     @staticmethod
     def load_config(config_path: str) -> GameConfig:
@@ -20,7 +27,7 @@ class Game:
 
     def initialize_play_desk(self):
         first_ameba = self._create_first_ameba()
-        self.play_desk.amebas.append(first_ameba)
+        self.play_desk._amebas.append(first_ameba)
         self.play_desk.generate_food()
 
     def run(self, iterations: int):

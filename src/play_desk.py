@@ -1,103 +1,105 @@
 import random
 
-from .food import Food
-from .conf.play_desk_config import PlayDeskConfig
-from .ameba import Ameba
-from .utils.position import Position
-from typing import Sequence, Union, Optional, Callable, TypeVar
+from src.calculations.get_entity_by_position import get_entity_by_position
+from src.shared_classes.visible_area import CalculateVisibleArea
 
-T = TypeVar("T")
-
-DeskEntity = Union[Food, Ameba]
+from src.food import Food
+from src.config_classes.play_desk_config import PlayDeskConfig
+from src.ameba import Ameba
+from src.shared_classes.position import Position
 
 
 class PlayDesk:
-    def __init__(self, config: PlayDeskConfig):
-        self.config = config
-        self.amebas = list[Ameba]()
-        self.foods = list[Food]()
+    def __init__(
+        self, config: PlayDeskConfig, calculate_visible_area: CalculateVisibleArea
+    ):
+        self._config = config
+        self._amebas = list[Ameba]()
+        self._foods = list[Food]()
+        self._calculate_visible_area = calculate_visible_area
 
     def generate_food(self):
         used_energy = self._calculate_used_energy()
-        available_energy = self.config.total_energy - used_energy
+        available_energy = self._config.total_energy - used_energy
         added_energy = 0
         while added_energy < available_energy:
-            energy = self.config.energy_per_food
+            energy = self._config.energy_per_food
             position = self.get_random_empty_position()
             food = Food(energy=energy, position=position)
-            self.foods.append(food)
-            added_energy += food.energy
+            self._foods.append(food)
+            added_energy += food.get_energy()
 
     def get_random_empty_position(self) -> Position:
         while True:
-            row = random.randint(0, self.config.rows - 1)
-            column = random.randint(0, self.config.columns - 1)
+            row = random.randint(0, self._config.rows - 1)
+            column = random.randint(0, self._config.columns - 1)
             position = Position(row, column)
-            if self._get_entity_by_position(position, self.amebas) is not None:
+            if get_entity_by_position(position, self._amebas) is not None:
                 continue
-            if self._get_entity_by_position(position, self.foods) is not None:
+            if get_entity_by_position(position, self._foods) is not None:
                 continue
             break
         return position
 
     def do_move_amebas(self) -> None:
-        for ameba in self.amebas:
-            ameba.position += ameba.move(
-                self._get_visible_area_by_entities(
-                    ameba, self.foods, lambda food: food.energy
+        for ameba in self._amebas:
+            ameba._position += ameba.move(
+                self._calculate_visible_area.fetch_visible_entities(
+                    ameba.get_position(), self._foods
                 )
             )
-            food_under_ameba = self._get_entity_by_position(ameba.position, self.foods)
-            if food_under_ameba is not None:
-                ameba.energy += food_under_ameba.energy
-                self.foods.remove(food_under_ameba)
-                ameba.eat_and_adjust_neural_network()
             print(
                 "Ameba position: row= ",
-                ameba.position.row,
+                ameba._position.row,
                 " col= ",
-                ameba.position.column,
+                ameba._position.column,
             )
+        self._cleanup_play_desk()
 
-    def _get_visible_area_by_entities(
-        self,
-        ameba: Ameba,
-        entities: Sequence[DeskEntity],
-        func: Optional[Callable[[DeskEntity], T]],
-    ) -> list[list[T]]:
-        visible_entity_area = []
-        for i in range(-ameba.config.visible_columns, ameba.config.visible_columns + 1):
-            visible_entity_per_line = []
-            for j in range(-ameba.config.visible_rows, ameba.config.visible_rows + 1):
-                position_on_line = Position(
-                    ameba.position.row + i, ameba.position.column + j
-                )
-                position_on_line.adjust_position(self.config.rows, self.config.columns)
-                entity: Optional[DeskEntity] = self._get_entity_by_position(
-                    position_on_line, entities
-                )
-                if entity is not None:
-                    if func is not None:
-                        visible_entity_per_line.append(func(entity))
-                    else:
-                        visible_entity_per_line.append(entity)
-                else:
-                    visible_entity_per_line.append(0)
-            visible_entity_area.append(visible_entity_per_line)
-        return visible_entity_area
+    # def _get_visible_area_by_entities(
+    #     self,
+    #     ameba: Ameba,
+    #     entities: Sequence[DeskEntity],
+    #     func: Optional[Callable[[DeskEntity], T]] = None,
+    # ) -> list[list[T]]:
+    #     visible_entity_area = []
+    #     for i in range(
+    #         -ameba._config.visible_columns, ameba._config.visible_columns + 1
+    #     ):
+    #         visible_entity_per_line = []
+    #         for j in range(-ameba._config.visible_rows, ameba._config.visible_rows + 1):
+    #             position_on_line = Position(
+    #                 ameba._position.row + i, ameba._position.column + j
+    #             )
+    #             position_on_line.adjust_position(self.config.rows, self.config.columns)
+    #             entity: Optional[DeskEntity] = self._get_entity_by_position(
+    #                 position_on_line, entities
+    #             )
+    #             if entity is not None:
+    #                 if func is not None:
+    #                     visible_entity_per_line.append(func(entity))
+    #                 else:
+    #                     visible_entity_per_line.append(entity)
+    #             else:
+    #                 visible_entity_per_line.append(0)
+    #         visible_entity_area.append(visible_entity_per_line)
+    #     return visible_entity_area
 
     def _calculate_used_energy(self) -> float:
-        food_energy = sum(food.energy for food in self.foods)
-        ameba_energy = sum(ameba.energy for ameba in self.amebas)
+        food_energy = sum(food.get_energy() for food in self._foods)
+        ameba_energy = sum(ameba._energy for ameba in self._amebas)
         return food_energy + ameba_energy
 
-    def _get_entity_by_position(
-        self, position: Position, entities: T
-    ) -> Optional[DeskEntity]:
-        for entity in entities:
-            if (
-                entity.position.column == position.column
-                and entity.position.row == position.row
-            ):
-                return entity
-        return None
+    # def _get_entity_by_position(
+    #     self, position: Position, entities: list[PositionEntity]
+    # ) -> Optional[DeskEntity]:
+    #     for entity in entities:
+    #         if (
+    #             entity.position.column == position.column
+    #             and entity.position.row == position.row
+    #         ):
+    #             return entity
+    #     return None
+
+    def _cleanup_play_desk(self):
+        self._foods = [food for food in self._foods if not food.is_deleted]

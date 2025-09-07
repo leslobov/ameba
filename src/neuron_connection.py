@@ -1,4 +1,4 @@
-from .neuron import Neuron
+from src.neuron import Neuron
 
 
 class NeuronConnection:

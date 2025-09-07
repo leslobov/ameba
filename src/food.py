@@ -1,7 +1,16 @@
-from src.utils.position import Position
+from src.abstract_classes.energy_item import EnergyItem
+from src.abstract_classes.position_item import PositionItem
+from src.shared_classes.position import Position
 
 
-class Food:
+class Food(EnergyItem, PositionItem):
     def __init__(self, energy: float, position: Position):
-        self.energy = energy
-        self.position = position
+        self._energy = energy
+        self._position = position
+        self.is_deleted = False
+
+    def get_energy(self) -> float:
+        return self._energy
+
+    def get_position(self) -> Position:
+        return self._position
