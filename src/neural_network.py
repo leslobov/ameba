@@ -1,6 +1,18 @@
+from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+
+
+@dataclass
+class MoveSolution:
+    def __init__(
+        self,
+        visible_area_energy_tensor: torch.Tensor,
+        predicted_move: torch.Tensor,
+    ):
+        self.visible_area_energy_tensor = visible_area_energy_tensor
+        self.predicted_move = predicted_move
 
 
 class EnergyLoss(Function):
@@ -26,22 +38,58 @@ class NeuralNetwork(nn.Module):
 
     def __init__(self, neural_network_hidden_layers: int, neurons_on_layer: int):
         super(NeuralNetwork, self).__init__()
-        self.neural_network_hidden_layers = neural_network_hidden_layers
-        self.neurons_on_layer = neurons_on_layer
-        self.layers = self._create_layers()
+        self._neural_network_hidden_layers = neural_network_hidden_layers
+        self._neurons_on_layer = neurons_on_layer
+        self._layers = self._create_layers()
+        self._moving_history: list[MoveSolution] = []
+
+    def append_moving_history(self, move_solution: MoveSolution) -> None:
+        self._moving_history.append(move_solution)
+
+    def erase_moving_history(self) -> None:
+        self._moving_history = []
+
+    def adjust_weights(self, added_energy: float) -> None:
+        pass
+        # if not history_visible_energy_area_flatten_tensors:
+        #     return
+
+        # for visible_area_tensor in history_visible_energy_area_flatten_tensors:
+        #     self.train()
+        #     self.zero_grad()
+
+        #     # Make a prediction
+        #     prediction = self.predict(visible_area_tensor)
+
+        #     # Assume the target is to move towards food (for simplicity, we use 0 as the target)
+        #     target = torch.tensor(0)
+
+        #     # Calculate lost energy (for simplicity, we use a constant value)
+        #     lost_energy = torch.tensor(1.0, requires_grad=True)
+
+        #     # Calculate loss
+        #     loss = self.loss(prediction, target, lost_energy)
+
+        #     # Backpropagation
+        #     self.backpropagation(loss)
+
+        #     # Update weights
+        #     optimizer = torch.optim.SGD(self.parameters(), lr=0.01)
+        #     optimizer.step()
 
     def _create_layers(self) -> nn.Sequential:
         layers = []
-        for _ in range(self.neural_network_hidden_layers):
-            layers.append(nn.Linear(self.neurons_on_layer, self.neurons_on_layer))
+        for _ in range(self._neural_network_hidden_layers):
+            layers.append(nn.Linear(self._neurons_on_layer, self._neurons_on_layer))
             layers.append(nn.Sigmoid())
-        layers.append(nn.Linear(self.neurons_on_layer, 4))
+        layers.append(nn.Linear(self._neurons_on_layer, 4))
         layers.append(nn.Softmax(dim=0))
         return nn.Sequential(*layers)
 
     def predict(self, x):
         # Pass the input through the neural network
-        output = self.layers(x)
+        self.eval()
+        output = self._layers(x)
 
         # Get the predicted class
         predicted_class = torch.argmax(output, dim=0)

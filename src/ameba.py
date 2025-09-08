@@ -1,12 +1,11 @@
 import torch
 
-from src.food import Food
 from src.abstract_classes.energy_item import EnergyItem
 from src.abstract_classes.position_item import PositionItem
 
 from src.shared_classes.position import Position
 from src.config_classes.ameba_config import AmebaConfig
-from src.neural_network import NeuralNetwork
+from src.neural_network import MoveSolution, NeuralNetwork
 
 
 class Ameba(PositionItem, EnergyItem):
@@ -21,10 +20,16 @@ class Ameba(PositionItem, EnergyItem):
         self._position = position
         self._energy = energy
         self._neural_network = neural_network
-        self._history = []
+        self._is_daleted = False
 
     def get_energy(self) -> float:
         return self._energy
+
+    def mark_deleted(self) -> None:
+        self._is_deleted = True
+
+    def is_deleted(self) -> bool:
+        return self._is_deleted
 
     def get_position(self) -> Position:
         return self._position
@@ -46,17 +51,29 @@ class Ameba(PositionItem, EnergyItem):
 
         new_position = Position.move_according_prediction(tensor_predict.item())
         entity_on_new_position = visible_area.get_entity_on_position(new_position)
+        self._neural_network.append_moving_history(
+            MoveSolution(
+                visible_area_energy_tensor=flat_visible_area_tensor,
+                predicted_move=tensor_predict,
+            )
+        )
         if entity_on_new_position is not None and isinstance(
-            entity_on_new_position, Food
+            entity_on_new_position, EnergyItem
         ):
+            self._eat_and_adjust_neural_network(entity_on_new_position)
             entity_on_new_position.mark_deleted()
+            self._moving_history = []
         return new_position
+
+    def _eat_and_adjust_neural_network(self, entity: EnergyItem):
+        self._energy += entity.get_energy()
+        self._neural_network.adjust_weights(
+            entity.get_energy(),
+        )
+        self._neural_network.erase_moving_history()
 
     def check_and_divide(self):
         pass  # Should return two Ameba instances
-
-    def eat_and_adjust_neural_network(self):
-        pass
 
     def populate_history(self):
         pass
@@ -69,7 +86,7 @@ class Ameba(PositionItem, EnergyItem):
             energy_row = []
             for entity in row:
                 if isinstance(entity, float):
-                    energy_row.append(entity)
+                    energy_row.append(entity.get_energy())
                 else:
                     energy_row.append(0.0)
             energy_area.append(energy_row)
