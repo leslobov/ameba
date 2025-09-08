@@ -23,8 +23,12 @@ class Position:
     def adjust_position(self, rows: int, columns: int):
         if self.row < 0:
             self.row += rows
+        elif self.row >= rows:
+            self.row -= rows
         if self.column < 0:
             self.column += columns
+        elif self.column >= columns:
+            self.column -= columns
 
     def __add__(self, other: "Position") -> "Position":
         if not isinstance(other, Position):

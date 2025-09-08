@@ -56,6 +56,7 @@ class PlayDesk:
                 ameba._position.column,
             )
         self._cleanup_play_desk()
+        self.generate_food()
 
     def _calculate_used_energy(self) -> float:
         food_energy = sum(food.get_energy() for food in self._foods)
