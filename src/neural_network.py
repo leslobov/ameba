@@ -2,6 +2,9 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 from torch.autograd import Function
+from torch.types import Number
+
+from src.shared_classes.visible_area import VisibleEntities
 
 
 @dataclass
@@ -86,15 +89,25 @@ class NeuralNetwork(nn.Module):
         layers.append(nn.Softmax(dim=0))
         return nn.Sequential(*layers)
 
-    def predict(self, x):
+    def predict(self, visible_entities: VisibleEntities) -> Number:
+
+        # Convert visible_area to a PyTorch tensor
+        visible_energy_tensor = torch.tensor(
+            visible_entities.get_visible_energy(), dtype=torch.float32
+        )
+
+        # Flatten the tensor
+        flat_visible_energy_tensor = torch.flatten(visible_energy_tensor)
+
         # Pass the input through the neural network
         self.eval()
-        output = self._layers(x)
+        with torch.no_grad():
+            output = self._layers(flat_visible_energy_tensor)
 
         # Get the predicted class
         predicted_class = torch.argmax(output, dim=0)
 
-        return predicted_class
+        return predicted_class.item()
 
     def loss(self, prediction, target, lost_energy):
         return EnergyLoss().apply(prediction, target, lost_energy)

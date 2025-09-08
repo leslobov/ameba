@@ -1,7 +1,7 @@
 from typing import Union
 
-from src.ameba import Ameba
-from src.food import Food
+from src.abstract_classes.energy_item import EnergyItem
+from src.abstract_classes.position_item import PositionItem
 
 
-DeskEntity = Union[Food, Ameba]
+DeskEntity = Union[EnergyItem, PositionItem]

@@ -1,11 +1,12 @@
 import torch
 
+from src.shared_classes.visible_area import VisibleEntities
 from src.abstract_classes.energy_item import EnergyItem
 from src.abstract_classes.position_item import PositionItem
 
 from src.shared_classes.position import Position
 from src.config_classes.ameba_config import AmebaConfig
-from src.neural_network import MoveSolution, NeuralNetwork
+from src.neural_network import NeuralNetwork
 
 
 class Ameba(PositionItem, EnergyItem):
@@ -34,42 +35,22 @@ class Ameba(PositionItem, EnergyItem):
     def get_position(self) -> Position:
         return self._position
 
-    def move(self, visible_area):
-        self._neural_network.eval()
-
-        # Convert visible_area to a PyTorch tensor
-        visible_area_tensor = torch.tensor(
-            visible_area.get_visible_energy(), dtype=torch.float32
-        )
-
-        # Flatten the tensor
-        flat_visible_area_tensor = torch.flatten(visible_area_tensor)
-
-        # Make a prediction
-        with torch.no_grad():
-            tensor_predict = self._neural_network.predict(flat_visible_area_tensor)
-
-        new_position = Position.move_according_prediction(tensor_predict.item())
+    def move(self, visible_area: VisibleEntities) -> Position:
+        prediction_item = self._neural_network.predict(visible_area)
+        new_position = Position.move_according_prediction(prediction_item)
         entity_on_new_position = visible_area.get_entity_on_position(new_position)
-        self._neural_network.append_moving_history(
-            MoveSolution(
-                visible_area_energy_tensor=flat_visible_area_tensor,
-                predicted_move=tensor_predict,
-            )
-        )
         if entity_on_new_position is not None and isinstance(
             entity_on_new_position, EnergyItem
         ):
             self._eat_and_adjust_neural_network(entity_on_new_position)
             entity_on_new_position.mark_deleted()
-            self._moving_history = []
         return new_position
 
     def _eat_and_adjust_neural_network(self, entity: EnergyItem):
-        self._energy += entity.get_energy()
         self._neural_network.adjust_weights(
             entity.get_energy(),
         )
+        self._energy += entity.get_energy()
         self._neural_network.erase_moving_history()
 
     def check_and_divide(self):
