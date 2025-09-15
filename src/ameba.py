@@ -43,7 +43,6 @@ class Ameba(PositionItem, EnergyItem):
             entity_on_new_position, EnergyItem
         ):
             self._eat_and_adjust_neural_network(entity_on_new_position)
-            entity_on_new_position.mark_deleted()
         return new_position
 
     def _eat_and_adjust_neural_network(self, entity: EnergyItem):
@@ -51,7 +50,7 @@ class Ameba(PositionItem, EnergyItem):
             entity.get_energy(),
         )
         self._energy += entity.get_energy()
-        self._neural_network.erase_moving_history()
+        entity.mark_deleted()
 
     def check_and_divide(self):
         pass  # Should return two Ameba instances

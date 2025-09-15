@@ -1,3 +1,5 @@
+import os
+from typing import cast
 from dataclasses import dataclass
 import torch
 import torch.nn as nn
@@ -18,17 +20,77 @@ class MoveSolution:
         self.predicted_move = predicted_move
 
 
-class EnergyLoss(Function):
-    @staticmethod
-    def forward(ctx, move_pred, move_true, lost_energy) -> float:
-        ctx.save_for_backward(move_pred, move_true, lost_energy)
-        return lost_energy**2
+def find_closest_food_position(
+    visible_area_energy_tensor: torch.Tensor,
+) -> tuple[int, int] | None:
+    center_row, center_column = 5, 5
+    min_distance = float("inf")
+    closest_food_position = None
 
-    @staticmethod
-    def backward(ctx, grad_output: float) -> float:
-        (move_pred, move_true, lost_energy) = ctx.saved_tensors
-        grad_lost_energy = lost_energy * grad_output
-        return grad_lost_energy
+    for i in range(11):
+        for j in range(11):
+            if visible_area_energy_tensor[i * 11 + j] > 0:
+                distance = abs(i - center_row) + abs(j - center_column)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_food_position = (i - center_row, j - center_column)
+
+    return closest_food_position
+
+
+def calculate_optimal_move(moving_history: list[MoveSolution]) -> torch.Tensor:
+    x, y = 0, 0
+    for move_solution in moving_history:
+        closest = find_closest_food_position(move_solution.visible_area_energy_tensor)
+        if closest is not None:
+            x += closest[0]
+            y += closest[1]
+            if abs(x) > abs(y):
+                if x > 0:
+                    return torch.tensor([0, 1, 0, 0], dtype=torch.float32)
+                else:
+                    return torch.tensor([0, 0, 0, 1], dtype=torch.float32)
+            else:
+                if y > 0:
+                    return torch.tensor([1, 0, 0, 0], dtype=torch.float32)
+                else:
+                    return torch.tensor([0, 0, 1, 0], dtype=torch.float32)
+        else:
+            predicted_move = move_solution.predicted_move
+            predicted_class = torch.argmax(predicted_move, dim=0).item()
+            if predicted_class == 0:
+                y += 1
+            elif predicted_class == 1:
+                x += 1
+            elif predicted_class == 2:
+                y -= 1
+            elif predicted_class == 3:
+                x -= 1
+
+
+# def calculate_optimal_move_if_nothing_close(moving_history: list[MoveSolution]) -> torch.Tensor:
+#     x, y = 0, 0
+#     for move_solution in moving_history:
+#         predicted_move = move_solution.predicted_move
+#         predicted_class = torch.argmax(predicted_move, dim=0).item()
+#         if predicted_class == 0:
+#             y += 1
+#         elif predicted_class == 1:
+#             x += 1
+#         elif predicted_class == 2:
+#             y -= 1
+#         elif predicted_class == 3:
+#             x -= 1
+#     if abs(x) > abs(y):
+#         if x > 0:
+#             return torch.tensor([0, 1, 0, 0], dtype=torch.float32)
+#         else:
+#             return torch.tensor([0, 0, 0, 1], dtype=torch.float32)
+#     else:
+#         if y > 0:
+#             return torch.tensor([1, 0, 0, 0], dtype=torch.float32)
+#         else:
+#             return torch.tensor([0, 0, 1, 0], dtype=torch.float32)
 
 
 class NeuralNetwork(nn.Module):
@@ -46,39 +108,37 @@ class NeuralNetwork(nn.Module):
         self._layers = self._create_layers()
         self._moving_history: list[MoveSolution] = []
 
-    def append_moving_history(self, move_solution: MoveSolution) -> None:
-        self._moving_history.append(move_solution)
+    def predict(self, visible_entities: VisibleEntities) -> Number:
 
-    def erase_moving_history(self) -> None:
-        self._moving_history = []
+        visible_energy_tensor = torch.tensor(
+            visible_entities.get_visible_energy(), dtype=torch.float32
+        )
 
-    def adjust_weights(self, added_energy: float) -> None:
-        pass
-        # if not history_visible_energy_area_flatten_tensors:
-        #     return
+        flat_visible_energy_tensor = torch.flatten(visible_energy_tensor)
+        output = self._layers(flat_visible_energy_tensor)
+        self._append_moving_history(MoveSolution(flat_visible_energy_tensor, output))
+        predicted_class = torch.argmax(output, dim=0)
 
-        # for visible_area_tensor in history_visible_energy_area_flatten_tensors:
-        #     self.train()
-        #     self.zero_grad()
+        return predicted_class.item()
 
-        #     # Make a prediction
-        #     prediction = self.predict(visible_area_tensor)
-
-        #     # Assume the target is to move towards food (for simplicity, we use 0 as the target)
-        #     target = torch.tensor(0)
-
-        #     # Calculate lost energy (for simplicity, we use a constant value)
-        #     lost_energy = torch.tensor(1.0, requires_grad=True)
-
-        #     # Calculate loss
-        #     loss = self.loss(prediction, target, lost_energy)
-
-        #     # Backpropagation
-        #     self.backpropagation(loss)
-
-        #     # Update weights
-        #     optimizer = torch.optim.SGD(self.parameters(), lr=0.01)
-        #     optimizer.step()
+    def adjust_weights(self, energy_goal: float) -> None:
+        self.train()
+        self.zero_grad()
+        steps = len(self._moving_history)
+        for step in range(steps):
+            move_solution = self._moving_history[step]
+            optimal_move = calculate_optimal_move(self._moving_history[step:])
+            predicted_move = self._layers(move_solution.visible_area_energy_tensor)
+            creterion = nn.MSELoss()
+            loss = creterion(predicted_move, optimal_move)
+            self.zero_grad()
+            loss.backward()
+            print(f"Step {step+1}/{steps}, Loss: {loss.item()}")
+            optimizer = torch.optim.SGD(self.parameters(), lr=0.01)
+            optimizer.step()
+        self._erase_moving_history()
+        net_storage_path = os.path.join(os.path.dirname(__file__), "net.pth")
+        torch.save(self.state_dict(), net_storage_path)
 
     def _create_layers(self) -> nn.Sequential:
         layers = []
@@ -89,28 +149,8 @@ class NeuralNetwork(nn.Module):
         layers.append(nn.Softmax(dim=0))
         return nn.Sequential(*layers)
 
-    def predict(self, visible_entities: VisibleEntities) -> Number:
+    def _append_moving_history(self, move_solution: MoveSolution) -> None:
+        self._moving_history.append(move_solution)
 
-        # Convert visible_area to a PyTorch tensor
-        visible_energy_tensor = torch.tensor(
-            visible_entities.get_visible_energy(), dtype=torch.float32
-        )
-
-        # Flatten the tensor
-        flat_visible_energy_tensor = torch.flatten(visible_energy_tensor)
-
-        # Pass the input through the neural network
-        self.eval()
-        with torch.no_grad():
-            output = self._layers(flat_visible_energy_tensor)
-
-        # Get the predicted class
-        predicted_class = torch.argmax(output, dim=0)
-
-        return predicted_class.item()
-
-    def loss(self, prediction, target, lost_energy):
-        return EnergyLoss().apply(prediction, target, lost_energy)
-
-    def backpropagation(self, loss):
-        loss.backward()
+    def _erase_moving_history(self) -> None:
+        self._moving_history = []

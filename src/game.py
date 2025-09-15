@@ -1,5 +1,7 @@
 import json
 
+import torch
+
 from src.ameba import Ameba
 from src.neural_network import NeuralNetwork
 from src.shared_classes.visible_area import CalculateVisibleArea
@@ -47,4 +49,10 @@ class Game:
             self.config.ameba.neural_network_hidden_layers,
             self.config.ameba.neurons_on_layer,
         )
+        try:
+            neural_network.load_state_dict(
+                torch.load("/home/les/projects/ai/ameba/src/net_state/net.pth")
+            )
+        except Exception as e:
+            print(f"Error loading neural network state: {e}")
         return Ameba(self.config.ameba, position, energy, neural_network)

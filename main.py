@@ -13,8 +13,14 @@ def main():
     print("Welcome to Ameba Game!")
     config_path = os.path.join(os.path.dirname(__file__), "config.json")
     game = Game(Game.load_config(config_path))
-    game.initialize_play_desk()
-    game.run(1)
+    # Create a dummy 'net.pth' file if it doesn't exist
+    net_storage_path = os.path.join(os.path.dirname(__file__), "src/net.pth")
+    if not os.path.exists(net_storage_path):
+        with open(net_storage_path, "wb") as f:
+            f.write(b"")
+    for _ in range(1):
+        game.initialize_play_desk()
+        game.run(200)
 
 
 if __name__ == "__main__":
