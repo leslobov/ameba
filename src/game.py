@@ -1,17 +1,17 @@
 import json
 
 from src.ameba import Ameba
-from src.neural_network import NeuralNetwork
-from src.shared_classes.visible_area import CalculateVisibleArea
-
+from src.shared.visible_area import CalculateVisibleAreaService
 from src.config_classes.game_config import GameConfig
 from src.play_desk import PlayDesk
+
+from src.neural_network.factory import NeuralNetworkType, get_neural_network
 
 
 class Game:
     def __init__(self, config: GameConfig):
         self.config = config
-        calculate_visible_area = CalculateVisibleArea(
+        calculate_visible_area = CalculateVisibleAreaService(
             visible_rows=config.ameba.visible_rows,
             visible_columns=config.ameba.visible_columns,
             desk_columns=config.play_desk.columns,
@@ -43,8 +43,12 @@ class Game:
     def _create_first_ameba(self):
         position = self.play_desk.get_random_empty_position()
         energy = self.config.ameba.initial_energy
-        neural_network = NeuralNetwork.generate_first_ameba_network(
-            self.config.ameba.neural_network_hidden_layers,
-            self.config.ameba.neurons_on_layer,
+        neural_network = get_neural_network(NeuralNetworkType.BASE_NN)(
+            self.config.neural_network
         )
-        return Ameba(self.config.ameba, position, energy, neural_network)
+        return Ameba(
+            self.config.ameba,
+            position,
+            energy,
+            neural_network,
+        )

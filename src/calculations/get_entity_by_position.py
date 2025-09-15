@@ -1,7 +1,7 @@
 from typing import Optional, Sequence
 from src.types.desk_entity import DeskEntity
 
-from src.shared_classes.position import Position
+from src.shared.position import Position
 
 
 def find_entity_by_position(

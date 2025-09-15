@@ -1,6 +1,6 @@
 from src.abstract_classes.energy_item import EnergyItem
 from src.abstract_classes.position_item import PositionItem
-from src.shared_classes.position import Position
+from src.shared.position import Position
 
 
 class Food(EnergyItem, PositionItem):

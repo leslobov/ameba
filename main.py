@@ -14,7 +14,7 @@ def main():
     config_path = os.path.join(os.path.dirname(__file__), "config.json")
     game = Game(Game.load_config(config_path))
     game.initialize_play_desk()
-    game.run(1)
+    game.run(10)
 
 
 if __name__ == "__main__":

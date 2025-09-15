@@ -2,16 +2,18 @@
     "play_desk": {
         "total_energy": 10000.0,
         "energy_per_food": 50.0,
-        "rows": 768,
-        "columns": 1024
+        "rows": 32,
+        "columns": 32
     },
     "ameba": {
-        "neural_network_hidden_layers": 3,
-        "neurons_on_layer": 121,
         "threhold_of_lostness_weight_coefficient": 0.2,
         "visible_rows": 5,
         "visible_columns": 5,
         "initial_energy": 100.0,
         "lost_energy_per_move": 1.0
+    },
+    "neural_network": {
+        "initial_hidden_layers": 3,
+        "initial_neurons_on_layer": 121
     }
 }

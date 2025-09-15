@@ -1,6 +1,6 @@
 import unittest
 
-from src.shared_classes.visible_area import CalculateVisibleArea
+from src.shared.visible_area import CalculateVisibleAreaService
 from src.play_desk import Position
 from src.food import Food
 
@@ -8,7 +8,7 @@ from src.food import Food
 class TestCalculateVisibleArea(unittest.TestCase):
 
     def test_fetch_visible_entities(self):
-        calculate_visible_area = CalculateVisibleArea(
+        calculate_visible_area = CalculateVisibleAreaService(
             visible_rows=2,
             visible_columns=2,
             desk_rows=7,

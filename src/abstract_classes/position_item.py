@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.shared_classes.position import Position
+from src.shared.position import Position
 
 
 class PositionItem(ABC):

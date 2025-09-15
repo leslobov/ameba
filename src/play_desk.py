@@ -1,22 +1,24 @@
 import random
 
 from src.calculations.get_entity_by_position import find_entity_by_position
-from src.shared_classes.visible_area import CalculateVisibleArea
+from src.shared.visible_area import CalculateVisibleAreaService
 
 from src.food import Food
 from src.config_classes.play_desk_config import PlayDeskConfig
 from src.ameba import Ameba
-from src.shared_classes.position import Position
+from src.shared.position import Position
 
 
 class PlayDesk:
     def __init__(
-        self, config: PlayDeskConfig, calculate_visible_area: CalculateVisibleArea
+        self,
+        config: PlayDeskConfig,
+        calculate_visible_area_service: CalculateVisibleAreaService,
     ):
         self._config = config
         self._amebas = list[Ameba]()
         self._foods = list[Food]()
-        self._calculate_visible_area = calculate_visible_area
+        self._calculate_visible_area_service = calculate_visible_area_service
 
     def generate_food(self):
         used_energy = self._calculate_used_energy()
@@ -44,7 +46,7 @@ class PlayDesk:
     def do_move_amebas(self) -> None:
         for ameba in self._amebas:
             ameba._position += ameba.move(
-                self._calculate_visible_area.fetch_visible_entities(
+                self._calculate_visible_area_service.fetch_visible_entities(
                     ameba.get_position(), self._foods
                 )
             )

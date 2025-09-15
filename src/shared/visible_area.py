@@ -1,7 +1,7 @@
 from typing import Optional, Sequence
 
 from src.abstract_classes.energy_item import EnergyItem
-from src.shared_classes.position import Position
+from src.shared.position import Position
 from src.types.desk_entity import DeskEntity
 from src.calculations.get_entity_by_position import find_entity_by_position
 
@@ -33,7 +33,7 @@ class VisibleEntities:
         return None
 
 
-class CalculateVisibleArea:
+class CalculateVisibleAreaService:
     def __init__(
         self, visible_rows: int, visible_columns: int, desk_rows: int, desk_columns: int
     ):
