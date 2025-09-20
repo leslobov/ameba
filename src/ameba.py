@@ -36,14 +36,34 @@ class Ameba(PositionItem, EnergyItem):
         return self._position
 
     def move(self, visible_area: VisibleEntities) -> Position:
+        print("---------------init move------------------")
+        print(
+            "Ameba initial position: row= ",
+            self._position.row,
+            " col= ",
+            self._position.column,
+        )
+        visible_energy = visible_area.get_visible_energy()
+        print("visible_area.get_visible_energy() =")
+        for i in range(len(visible_energy)):
+            print(
+                f"{i:02d} :",
+                [
+                    f"{j}: {visible_energy[i][j]:02.0f}"
+                    for j in range(len(visible_energy[i]))
+                ],
+            )
         prediction_item = self._neural_network.predict(visible_area)
+        print("prediction_item =", prediction_item)
         new_position = Position.move_according_prediction(prediction_item)
+        print("new_position =", new_position.row, new_position.column)
         entity_on_new_position = visible_area.get_entity_on_position(new_position)
         if entity_on_new_position is not None and isinstance(
             entity_on_new_position, EnergyItem
         ):
             entity_on_new_position.mark_deleted()
             self._energy += entity_on_new_position.get_energy()
+        print("+++++++++++++++ move end +++++++++++++++")
         return new_position
 
     def check_and_divide(self):

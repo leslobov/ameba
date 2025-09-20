@@ -24,14 +24,14 @@ def closest_energy_direction(visible_area_energy_tensor: torch.Tensor) -> torch.
     closest_food_position = find_closest_food_position(visible_area_energy_tensor)
     if closest_food_position is None:
         return torch.tensor([0.25, 0.25, 0.25, 0.25], dtype=torch.float32)
-    x, y = closest_food_position
-    if abs(x) > abs(y):
-        if x > 0:
+    rows, cols = closest_food_position
+    if abs(cols) > abs(rows):
+        if cols > 0:
             return torch.tensor([0, 1, 0, 0], dtype=torch.float32)
         else:
             return torch.tensor([0, 0, 0, 1], dtype=torch.float32)
     else:
-        if y > 0:
-            return torch.tensor([1, 0, 0, 0], dtype=torch.float32)
-        else:
+        if rows > 0:
             return torch.tensor([0, 0, 1, 0], dtype=torch.float32)
+        else:
+            return torch.tensor([1, 0, 0, 0], dtype=torch.float32)

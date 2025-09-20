@@ -45,18 +45,12 @@ class PlayDesk:
 
     def do_move_amebas(self) -> None:
         for ameba in self._amebas:
-            ameba._position += ameba.move(
+            move_position = ameba.move(
                 self._calculate_visible_area_service.fetch_visible_entities(
                     ameba.get_position(), self._foods
                 )
             )
-            ameba._position.adjust_position(self._config.rows, self._config.columns)
-            print(
-                "Ameba position: row= ",
-                ameba._position.row,
-                " col= ",
-                ameba._position.column,
-            )
+            ameba._position += move_position
         self._cleanup_play_desk()
         self.generate_food()
 

@@ -6,13 +6,13 @@ class Position:
     @staticmethod
     def move_according_prediction(neural_network_prediction: Number) -> "Position":
         if neural_network_prediction == 0:
-            return Position(0, 1)
-        elif neural_network_prediction == 1:
-            return Position(1, 0)
-        elif neural_network_prediction == 2:
-            return Position(0, -1)
-        elif neural_network_prediction == 3:
             return Position(-1, 0)
+        elif neural_network_prediction == 1:
+            return Position(0, 1)
+        elif neural_network_prediction == 2:
+            return Position(1, 0)
+        elif neural_network_prediction == 3:
+            return Position(0, -1)
         else:
             raise ValueError("Invalid neural network prediction")
 
