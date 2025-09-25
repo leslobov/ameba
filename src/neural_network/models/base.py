@@ -1,16 +1,7 @@
 import os
-from typing_extensions import Self
 import torch
 import torch.nn as nn
 from torch.types import Number
-
-import sys
-
-# TODO: remove this hack to import from src, use vscode settings instead
-src_path = os.path.join(os.path.dirname(__file__), "..", "..", "..")
-src_path = os.path.abspath(src_path)
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
 
 from src.neural_network.calculations.find_closest_energy_direction import (
     closest_energy_direction,
@@ -23,31 +14,27 @@ from src.neural_network.abstract_classes.neural_network_model import NeuralNetwo
 class BaseNeuralNetwork(NeuralNetwork):
 
     def __init__(self, config: NeuralNetworkConfig):
+        self.config = config
         net_state_path = os.path.join(
             os.path.dirname(__file__), "../net_state/base.pth"
         )
-        self._generate_nn(config)
-        # self.train(100000, 64)
+        self._generate_nn()
         if os.path.exists(net_state_path):
             self._nn.load_state_dict(torch.load(net_state_path))
 
     def predict(self, visible_entities: VisibleEntities) -> Number:
 
-        # Convert visible_area to a PyTorch tensor
         visible_energy_tensor = torch.tensor(
             visible_entities.get_visible_energy(), dtype=torch.float32
         )
 
-        # Flatten the tensor
         flat_visible_energy_tensor = torch.flatten(visible_energy_tensor)
 
-        # Pass the input through the neural network
-        # self._nn.eval()
-        # with torch.no_grad():
-        output = self._nn(flat_visible_energy_tensor)
-        print("Neural network output =", output)
+        self._nn.eval()
+        with torch.no_grad():
+            output = self._nn(flat_visible_energy_tensor)
+            print("Neural network output =", output)
 
-        # Get the predicted class
         predicted_class = torch.argmax(output, dim=0)
 
         return predicted_class.item()
@@ -95,25 +82,29 @@ class BaseNeuralNetwork(NeuralNetwork):
             avg_loss = running_loss / num_batches
             print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_loss:.4f}")
 
-    def _generate_nn(self, config: NeuralNetworkConfig):
-        self._neural_network_hidden_layers = config.initial_hidden_layers
-        self._neurons_on_layer = config.initial_neurons_on_layer
+    def _generate_nn(self) -> None:
+        self._neural_network_hidden_layers = self.config.initial_hidden_layers
+        self._neurons_on_layer = self.config.initial_neurons_on_layer
         layers = []
-        layers.append(nn.Linear(121, self._neurons_on_layer))
+        layers.append(nn.Linear(self.config.input_size, self._neurons_on_layer))
         layers.append(nn.ReLU())
         for _ in range(self._neural_network_hidden_layers - 1):
             layers.append(nn.Linear(self._neurons_on_layer, self._neurons_on_layer))
             layers.append(nn.ReLU())
         layers.append(nn.Linear(self._neurons_on_layer, 4))
-        # layers.append(nn.Sigmoid())
-        # layers.append(nn.Softmax(dim=0))
         self._nn = nn.Sequential(*layers)
 
 
 if __name__ == "__main__":
+    import json
+    from src.config_classes.game_config import GameConfig
 
-    config = NeuralNetworkConfig(initial_hidden_layers=2, initial_neurons_on_layer=32)
-    neural_network = BaseNeuralNetwork(config)
+    config_path = os.path.join(os.environ["PROJECTPATH"], "config.json")
+    with open(config_path, "r") as file_json:
+        config_data = json.load(file_json)
+    game_config = GameConfig.from_dict(config_data)
+
+    neural_network = BaseNeuralNetwork(game_config.neural_network)
 
     neural_network.train(10000000, 6400)
     net_state_path = os.path.join(os.path.dirname(__file__), "../net_state/base.pth")
