@@ -13,7 +13,7 @@
         "lost_energy_per_move": 1.0
     },
     "neural_network": {
-        "initial_hidden_layers": 2,
+        "initial_hidden_layers": 1,
         "initial_neurons_on_layer": 32
     }
 }

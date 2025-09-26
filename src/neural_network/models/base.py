@@ -88,7 +88,7 @@ class BaseNeuralNetwork(NeuralNetwork):
         layers = []
         layers.append(nn.Linear(self.config.input_size, self._neurons_on_layer))
         layers.append(nn.ReLU())
-        for _ in range(self._neural_network_hidden_layers - 1):
+        for _ in range(self._neural_network_hidden_layers):
             layers.append(nn.Linear(self._neurons_on_layer, self._neurons_on_layer))
             layers.append(nn.ReLU())
         layers.append(nn.Linear(self._neurons_on_layer, 4))
