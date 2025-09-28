@@ -42,10 +42,17 @@
 
 .config-actions {
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 24px;
+}
+
+.primary-actions,
+.navigation-actions {
+    display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    padding: 16px 24px;
 }
 
 .spacer {
@@ -58,6 +65,36 @@ mat-card-title {
     gap: 8px;
 }
 
+
+
+// Loading spinner
+.loading-spinner {
+    margin-left: 8px;
+}
+
+// Snackbar custom classes
+:host ::ng-deep {
+    .success-snackbar {
+        background-color: #4caf50;
+        color: white;
+    }
+
+    .error-snackbar {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .warning-snackbar {
+        background-color: #ff9800;
+        color: white;
+    }
+
+    .info-snackbar {
+        background-color: #2196f3;
+        color: white;
+    }
+}
+
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
@@ -68,7 +105,15 @@ mat-card-title {
         align-items: stretch;
     }
 
+    .primary-actions,
+    .navigation-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
     .spacer {
         display: none;
     }
+
+
 }
