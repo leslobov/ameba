@@ -48,7 +48,7 @@ class BaseNeuralNetwork(NeuralNetwork):
         batch_inputs = []
         batch_labels = []
 
-        for _ in range(epochs):
+        for _ in range(steps):
             visible_energy_tensor = torch.zeros((11, 11), dtype=torch.float32)
             num_points = int(torch.randint(1, 11, (1,)).item())
             for _ in range(num_points):
@@ -61,7 +61,6 @@ class BaseNeuralNetwork(NeuralNetwork):
         inputs = torch.stack(batch_inputs)
         labels = torch.stack(batch_labels)
 
-        batch_size = 64
         num_batches = inputs.size(0) // batch_size
 
         for epoch in range(epochs):
