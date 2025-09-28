@@ -5,6 +5,7 @@ import uvicorn
 
 # Import the config module
 from config import router as config_router
+from training import router as training_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -27,6 +28,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(config_router)
+app.include_router(training_router)
 
 # Path to config file (for health check)
 CONFIG_FILE_PATH = Path(__file__).parent.parent / "config.json"
@@ -38,8 +40,13 @@ async def root():
     return {
         "message": "Ameba Game API",
         "version": "1.0.0",
-        "endpoints": {"config": "/api/config", "health": "/health", "docs": "/docs"},
-        "modules": ["config"],
+        "endpoints": {
+            "config": "/api/config",
+            "training": "/api/training",
+            "health": "/health",
+            "docs": "/docs",
+        },
+        "modules": ["config", "training"],
     }
 
 
@@ -49,9 +56,9 @@ async def health_check():
     return {
         "status": "healthy",
         "config_file_exists": CONFIG_FILE_PATH.exists(),
-        "modules_loaded": ["config"],
+        "modules_loaded": ["config", "training"],
     }
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=False, log_level="info")

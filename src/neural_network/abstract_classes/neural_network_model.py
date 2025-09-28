@@ -13,3 +13,7 @@ class NeuralNetwork(ABC):
     @abstractmethod
     def predict(self, visible_entities: VisibleEntities) -> Number:
         pass
+
+    @abstractmethod
+    def train(self, steps: int, batch_size: int, mode: bool = True) -> None:
+        pass
