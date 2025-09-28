@@ -6,7 +6,32 @@
 .config-form {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
+}
+
+.config-accordion {
+    width: 100%;
+}
+
+.config-accordion .mat-expansion-panel {
+    margin-bottom: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.config-accordion mat-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.config-accordion mat-panel-description {
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.section-content {
+    padding: 16px 0;
 }
 
 .config-section {

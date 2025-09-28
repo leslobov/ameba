@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -15,18 +16,30 @@ import { RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 import { BackendApiService, BackendGameConfig } from '../../services/backend-api.service';
 
+interface PlayDeskConfig {
+    total_energy: number;
+    energy_per_food: number;
+    rows: number;
+    columns: number;
+}
+
+interface AmebaConfig {
+    threhold_of_lostness_weight_coefficient: number;
+    visible_rows: number;
+    visible_columns: number;
+    initial_energy: number;
+    lost_energy_per_move: number;
+}
+
+interface NeuralNetworkConfig {
+    initial_hidden_layers: number;
+    initial_neurons_on_layer: number;
+}
+
 interface GameConfig {
-    worldWidth: number;
-    worldHeight: number;
-    initialAmebaCount: number;
-    initialFoodCount: number;
-    maxSimulationSpeed: number;
-    energyDecayRate: number;
-    reproductionThreshold: number;
-    mutationRate: number;
-    enableNeuralNetwork: boolean;
-    networkComplexity: string;
-    autoSave: boolean;
+    play_desk: PlayDeskConfig;
+    ameba: AmebaConfig;
+    neural_network: NeuralNetworkConfig;
 }
 
 @Component({
@@ -35,6 +48,7 @@ interface GameConfig {
         ReactiveFormsModule,
         MatButtonModule,
         MatCardModule,
+        MatExpansionModule,
         MatFormFieldModule,
         MatInputModule,
         MatSliderModule,
@@ -57,33 +71,47 @@ export class ConfigComponent implements OnInit {
     protected readonly configForm: FormGroup;
     protected readonly previewData = signal<GameConfig | null>(null);
     protected readonly isLoading = signal<boolean>(false);
-    protected readonly backendConfig = signal<BackendGameConfig | null>(null); private readonly defaultConfig: GameConfig = {
-        worldWidth: 800,
-        worldHeight: 600,
-        initialAmebaCount: 20,
-        initialFoodCount: 100,
-        maxSimulationSpeed: 3,
-        energyDecayRate: 1.0,
-        reproductionThreshold: 100,
-        mutationRate: 0.1,
-        enableNeuralNetwork: true,
-        networkComplexity: 'medium',
-        autoSave: true
+    protected readonly backendConfig = signal<BackendGameConfig | null>(null);
+
+    private readonly defaultConfig: GameConfig = {
+        play_desk: {
+            total_energy: 10000.0,
+            energy_per_food: 50.0,
+            rows: 32,
+            columns: 32
+        },
+        ameba: {
+            threhold_of_lostness_weight_coefficient: 0.2,
+            visible_rows: 5,
+            visible_columns: 5,
+            initial_energy: 100.0,
+            lost_energy_per_move: 1.0
+        },
+        neural_network: {
+            initial_hidden_layers: 1,
+            initial_neurons_on_layer: 32
+        }
     };
 
     constructor() {
         this.configForm = this.fb.group({
-            worldWidth: [this.defaultConfig.worldWidth, [Validators.required, Validators.min(50), Validators.max(1000)]],
-            worldHeight: [this.defaultConfig.worldHeight, [Validators.required, Validators.min(50), Validators.max(1000)]],
-            initialAmebaCount: [this.defaultConfig.initialAmebaCount, [Validators.required, Validators.min(1), Validators.max(100)]],
-            initialFoodCount: [this.defaultConfig.initialFoodCount, [Validators.required, Validators.min(10), Validators.max(500)]],
-            maxSimulationSpeed: [this.defaultConfig.maxSimulationSpeed, [Validators.required, Validators.min(1), Validators.max(10)]],
-            energyDecayRate: [this.defaultConfig.energyDecayRate, [Validators.required, Validators.min(0.1), Validators.max(5)]],
-            reproductionThreshold: [this.defaultConfig.reproductionThreshold, [Validators.required, Validators.min(50), Validators.max(200)]],
-            mutationRate: [this.defaultConfig.mutationRate, [Validators.required, Validators.min(0.01), Validators.max(0.5)]],
-            enableNeuralNetwork: [this.defaultConfig.enableNeuralNetwork],
-            networkComplexity: [this.defaultConfig.networkComplexity, Validators.required],
-            autoSave: [this.defaultConfig.autoSave]
+            play_desk: this.fb.group({
+                total_energy: [this.defaultConfig.play_desk.total_energy, [Validators.required, Validators.min(1000), Validators.max(100000)]],
+                energy_per_food: [this.defaultConfig.play_desk.energy_per_food, [Validators.required, Validators.min(10), Validators.max(200)]],
+                rows: [this.defaultConfig.play_desk.rows, [Validators.required, Validators.min(10), Validators.max(100)]],
+                columns: [this.defaultConfig.play_desk.columns, [Validators.required, Validators.min(10), Validators.max(100)]]
+            }),
+            ameba: this.fb.group({
+                threhold_of_lostness_weight_coefficient: [this.defaultConfig.ameba.threhold_of_lostness_weight_coefficient, [Validators.required, Validators.min(0), Validators.max(1)]],
+                visible_rows: [this.defaultConfig.ameba.visible_rows, [Validators.required, Validators.min(3), Validators.max(15)]],
+                visible_columns: [this.defaultConfig.ameba.visible_columns, [Validators.required, Validators.min(3), Validators.max(15)]],
+                initial_energy: [this.defaultConfig.ameba.initial_energy, [Validators.required, Validators.min(50), Validators.max(500)]],
+                lost_energy_per_move: [this.defaultConfig.ameba.lost_energy_per_move, [Validators.required, Validators.min(0.1), Validators.max(10)]]
+            }),
+            neural_network: this.fb.group({
+                initial_hidden_layers: [this.defaultConfig.neural_network.initial_hidden_layers, [Validators.required, Validators.min(1), Validators.max(10)]],
+                initial_neurons_on_layer: [this.defaultConfig.neural_network.initial_neurons_on_layer, [Validators.required, Validators.min(8), Validators.max(256)]]
+            })
         });
     }
 
@@ -108,8 +136,7 @@ export class ConfigComponent implements OnInit {
         ).subscribe(backendConfig => {
             if (backendConfig) {
                 this.backendConfig.set(backendConfig);
-                const frontendConfig = this.backendApi.mapBackendToFrontend(backendConfig);
-                this.configForm.patchValue(frontendConfig);
+                this.configForm.patchValue(backendConfig);
 
                 this.snackBar.open('Configuration loaded from server', 'Close', {
                     duration: 2000,
@@ -131,23 +158,21 @@ export class ConfigComponent implements OnInit {
             return;
         }
 
-        const frontendConfig = this.configForm.value as GameConfig;
+        const gameConfig = this.configForm.value as GameConfig;
         this.isLoading.set(true);
 
-        // Always try to save to backend first
-        const backendConfig = this.backendApi.mapFrontendToBackend(frontendConfig);
-
-        this.backendApi.updateGameConfig(backendConfig).pipe(
+        // Try to save to backend first
+        this.backendApi.updateGameConfig(gameConfig).pipe(
             finalize(() => this.isLoading.set(false)),
             catchError(error => {
                 console.error('Backend save failed, saving to localStorage only:', error);
-                this.saveToLocalStorage(frontendConfig);
+                this.saveToLocalStorage(gameConfig);
                 return of(null);
             })
         ).subscribe(savedConfig => {
             if (savedConfig) {
                 this.backendConfig.set(savedConfig);
-                this.saveToLocalStorage(frontendConfig);
+                this.saveToLocalStorage(gameConfig);
 
                 this.snackBar.open('Configuration saved to server and locally!', 'Close', {
                     duration: 3000,
@@ -174,8 +199,7 @@ export class ConfigComponent implements OnInit {
         ).subscribe(defaultConfig => {
             if (defaultConfig) {
                 this.backendConfig.set(defaultConfig);
-                const frontendConfig = this.backendApi.mapBackendToFrontend(defaultConfig);
-                this.configForm.patchValue(frontendConfig);
+                this.configForm.patchValue(defaultConfig);
 
                 this.snackBar.open('Configuration reset to defaults on server and locally', 'Close', {
                     duration: 3000,
@@ -201,7 +225,6 @@ export class ConfigComponent implements OnInit {
 
             if (this.backendConfig()) {
                 console.log('Current Backend Config:', this.backendConfig());
-                console.log('Mapped Frontend Config:', this.backendApi.mapBackendToFrontend(this.backendConfig()!));
             }
         }
     }
