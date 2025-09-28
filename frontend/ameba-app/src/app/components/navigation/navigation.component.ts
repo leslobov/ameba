@@ -30,6 +30,10 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             <mat-icon>videogame_asset</mat-icon>
             Game
           </button>
+          <button mat-button routerLink="/config" routerLinkActive="active">
+            <mat-icon>settings</mat-icon>
+            Config
+          </button>
         </nav>
       </mat-toolbar-row>
     </mat-toolbar>

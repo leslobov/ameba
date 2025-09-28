@@ -14,6 +14,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/game/game.component').then(m => m.GameComponent)
     },
     {
+        path: 'config',
+        loadComponent: () => import('./pages/config/config.component').then(m => m.ConfigComponent)
+    },
+    {
         path: '**',
         redirectTo: ''
     }
