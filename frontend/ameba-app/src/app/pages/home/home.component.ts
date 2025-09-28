@@ -5,11 +5,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 @Component({
-    selector: 'app-home',
-    imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
-    template: `
-    <div class="flex-center mat-padding-lg">
-      <mat-card class="mat-card-center">
+  selector: 'app-home',
+  imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
+  template: `
+    <div class="home-container">
+      <mat-card class="home-card">
         <mat-card-header>
           <mat-card-title>Welcome Home!</mat-card-title>
           <mat-card-subtitle>This is the home page</mat-card-subtitle>
@@ -34,9 +34,24 @@ import { RouterLink } from '@angular/router';
       </mat-card>
     </div>
   `,
-    styles: [`
-    mat-card {
+  styles: [`
+    .home-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+      padding: 20px;
+    }
+
+    .home-card {
       max-width: 500px;
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      .home-container {
+        padding: 16px;
+      }
     }
   `]
 })

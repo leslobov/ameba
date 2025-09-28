@@ -4,11 +4,11 @@ import { MatCardModule } from '@angular/material/card';
 import { RouterLink } from '@angular/router';
 
 @Component({
-    selector: 'app-about',
-    imports: [MatButtonModule, MatCardModule, RouterLink],
-    template: `
-    <div class="flex-center mat-padding-lg">
-      <mat-card class="mat-card-center">
+  selector: 'app-about',
+  imports: [MatButtonModule, MatCardModule, RouterLink],
+  template: `
+    <div class="about-container">
+      <mat-card class="about-card">
         <mat-card-header>
           <mat-card-title>About Ameba</mat-card-title>
           <mat-card-subtitle>Learn about this project</mat-card-subtitle>
@@ -33,13 +33,29 @@ import { RouterLink } from '@angular/router';
       </mat-card>
     </div>
   `,
-    styles: [`
-    mat-card {
-      max-width: 600px;
+  styles: [`
+    .about-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+      padding: 20px;
     }
+
+    .about-card {
+      max-width: 600px;
+      width: 100%;
+    }
+
     ul {
       margin: 16px 0;
       padding-left: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .about-container {
+        padding: 16px;
+      }
     }
   `]
 })

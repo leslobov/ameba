@@ -5,11 +5,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 @Component({
-    selector: 'app-game',
-    imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
-    template: `
-    <div class="flex-center mat-padding-lg">
-      <mat-card class="mat-card-center">
+  selector: 'app-game',
+  imports: [MatButtonModule, MatCardModule, MatIconModule, RouterLink],
+  template: `
+    <div class="game-container">
+      <mat-card class="game-card">
         <mat-card-header>
           <mat-card-title>
             <mat-icon>videogame_asset</mat-icon>
@@ -41,13 +41,24 @@ import { RouterLink } from '@angular/router';
       </mat-card>
     </div>
   `,
-    styles: [`
-    mat-card {
-      max-width: 500px;
+  styles: [`
+    .game-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 80vh;
+      padding: 20px;
     }
+
+    .game-card {
+      max-width: 500px;
+      width: 100%;
+    }
+
     .game-area {
       text-align: center;
     }
+
     .simulation-placeholder {
       font-size: 24px;
       line-height: 1.2;
@@ -56,10 +67,17 @@ import { RouterLink } from '@angular/router';
       border-radius: 8px;
       margin: 16px 0;
     }
+
     mat-card-title {
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    @media (max-width: 600px) {
+      .game-container {
+        padding: 16px;
+      }
     }
   `]
 })

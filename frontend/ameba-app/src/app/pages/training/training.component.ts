@@ -14,21 +14,21 @@ import { finalize } from 'rxjs';
 import { TrainingService } from '../../services/training.service';
 
 @Component({
-    selector: 'app-training',
-    standalone: true,
-    imports: [
-        DatePipe,
-        MatButtonModule,
-        MatCardModule,
-        MatIconModule,
-        MatSnackBarModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatProgressSpinnerModule,
-        MatCheckboxModule,
-        ReactiveFormsModule
-    ],
-    template: `
+  selector: 'app-training',
+  standalone: true,
+  imports: [
+    DatePipe,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    MatSnackBarModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatCheckboxModule,
+    ReactiveFormsModule
+  ],
+  template: `
     <div class="training-container">
       <mat-card class="training-card">
         <mat-card-header>
@@ -145,7 +145,7 @@ import { TrainingService } from '../../services/training.service';
       </mat-card>
     </div>
   `,
-    styles: [`
+  styles: [`
     .training-container {
       display: flex;
       justify-content: center;
@@ -273,105 +273,105 @@ import { TrainingService } from '../../services/training.service';
   `]
 })
 export class TrainingComponent implements OnInit {
-    private router = inject(Router);
-    private snackBar = inject(MatSnackBar);
-    private fb = inject(FormBuilder);
-    private trainingService = inject(TrainingService);
+  private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
+  private fb = inject(FormBuilder);
+  private trainingService = inject(TrainingService);
 
-    // Signals for reactive state
-    trainingStatus = signal<any>(null);
-    trainingResult = signal<any>(null);
-    isTraining = signal<boolean>(false);
+  // Signals for reactive state
+  trainingStatus = signal<any>(null);
+  trainingResult = signal<any>(null);
+  isTraining = signal<boolean>(false);
 
-    gameConfig: any = null;
-    trainingForm: FormGroup;
+  gameConfig: any = null;
+  trainingForm: FormGroup;
 
-    constructor() {
-        // Initialize the training form
-        this.trainingForm = this.fb.group({
-            steps: [1000, [Validators.required, Validators.min(10), Validators.max(100000)]],
-            batch_size: [32, [Validators.required, Validators.min(1), Validators.max(1000)]],
-            mode: [true]
-        });
+  constructor() {
+    // Initialize the training form
+    this.trainingForm = this.fb.group({
+      steps: [1000, [Validators.required, Validators.min(10), Validators.max(100000)]],
+      batch_size: [32, [Validators.required, Validators.min(1), Validators.max(1000)]],
+      mode: [true]
+    });
+  }
+
+  ngOnInit(): void {
+    // Check if game configuration was passed via router state
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation?.extras?.state?.['gameConfig']) {
+      this.gameConfig = navigation.extras.state['gameConfig'];
+      this.snackBar.open('Game configuration loaded for training!', 'Close', {
+        duration: 4000,
+        panelClass: ['success-snackbar']
+      });
     }
 
-    ngOnInit(): void {
-        // Check if game configuration was passed via router state
-        const navigation = this.router.getCurrentNavigation();
-        if (navigation?.extras?.state?.['gameConfig']) {
-            this.gameConfig = navigation.extras.state['gameConfig'];
-            this.snackBar.open('Game configuration loaded for training!', 'Close', {
-                duration: 4000,
-                panelClass: ['success-snackbar']
-            });
+    // Load initial training status
+    this.refreshStatus();
+  }
+
+  startTraining(): void {
+    if (this.trainingForm.invalid || this.isTraining()) {
+      return;
+    }
+
+    this.isTraining.set(true);
+    this.trainingResult.set(null);
+
+    const request = this.trainingForm.value;
+
+    this.trainingService.startTraining(request).pipe(
+      finalize(() => this.isTraining.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.trainingResult.set(response);
+        if (response.success) {
+          this.snackBar.open('Training completed successfully!', 'Close', {
+            duration: 5000,
+            panelClass: ['success-snackbar']
+          });
+          // Refresh status to show updated model info
+          this.refreshStatus();
+        } else {
+          this.snackBar.open('Training failed!', 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
         }
-
-        // Load initial training status
-        this.refreshStatus();
-    }
-
-    startTraining(): void {
-        if (this.trainingForm.invalid || this.isTraining()) {
-            return;
-        }
-
-        this.isTraining.set(true);
-        this.trainingResult.set(null);
-
-        const request = this.trainingForm.value;
-
-        this.trainingService.startTraining(request).pipe(
-            finalize(() => this.isTraining.set(false))
-        ).subscribe({
-            next: (response) => {
-                this.trainingResult.set(response);
-                if (response.success) {
-                    this.snackBar.open('Training completed successfully!', 'Close', {
-                        duration: 5000,
-                        panelClass: ['success-snackbar']
-                    });
-                    // Refresh status to show updated model info
-                    this.refreshStatus();
-                } else {
-                    this.snackBar.open('Training failed!', 'Close', {
-                        duration: 5000,
-                        panelClass: ['error-snackbar']
-                    });
-                }
-            },
-            error: (error) => {
-                this.trainingResult.set({
-                    success: false,
-                    message: error.message
-                });
-                this.snackBar.open(`Training failed: ${error.message}`, 'Close', {
-                    duration: 5000,
-                    panelClass: ['error-snackbar']
-                });
-            }
+      },
+      error: (error) => {
+        this.trainingResult.set({
+          success: false,
+          message: error.message
         });
-    }
-
-    refreshStatus(): void {
-        this.trainingService.getTrainingStatus().subscribe({
-            next: (status) => {
-                this.trainingStatus.set(status);
-            },
-            error: (error) => {
-                console.error('Failed to get training status:', error);
-                this.snackBar.open('Failed to get training status', 'Close', {
-                    duration: 3000,
-                    panelClass: ['error-snackbar']
-                });
-            }
+        this.snackBar.open(`Training failed: ${error.message}`, 'Close', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
         });
-    }
+      }
+    });
+  }
 
-    goToConfig(): void {
-        this.router.navigate(['/config']);
-    }
+  refreshStatus(): void {
+    this.trainingService.getTrainingStatus().subscribe({
+      next: (status) => {
+        this.trainingStatus.set(status);
+      },
+      error: (error) => {
+        console.error('Failed to get training status:', error);
+        this.snackBar.open('Failed to get training status', 'Close', {
+          duration: 3000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
 
-    goHome(): void {
-        this.router.navigate(['/']);
-    }
+  goToConfig(): void {
+    this.router.navigate(['/config']);
+  }
+
+  goHome(): void {
+    this.router.navigate(['/']);
+  }
 }
