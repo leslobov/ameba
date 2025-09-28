@@ -18,6 +18,10 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/config/config.component').then(m => m.ConfigComponent)
     },
     {
+        path: 'training',
+        loadComponent: () => import('./pages/training/training.component').then(m => m.TrainingComponent)
+    },
+    {
         path: '**',
         redirectTo: ''
     }

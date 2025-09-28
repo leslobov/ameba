@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,9 +13,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
 import { BackendApiService, BackendGameConfig } from '../../services/backend-api.service';
+import { TrainingConfirmDialogComponent } from './training-confirm-dialog.component';
 
 interface PlayDeskConfig {
     total_energy: number;
@@ -48,6 +50,7 @@ interface GameConfig {
         ReactiveFormsModule,
         MatButtonModule,
         MatCardModule,
+        MatDialogModule,
         MatExpansionModule,
         MatFormFieldModule,
         MatInputModule,
@@ -67,6 +70,8 @@ export class ConfigComponent implements OnInit {
     private fb = inject(FormBuilder);
     private snackBar = inject(MatSnackBar);
     private backendApi = inject(BackendApiService);
+    private dialog = inject(MatDialog);
+    private router = inject(Router);
 
     protected readonly configForm: FormGroup;
     protected readonly previewData = signal<GameConfig | null>(null);
@@ -166,7 +171,7 @@ export class ConfigComponent implements OnInit {
             finalize(() => this.isLoading.set(false)),
             catchError(error => {
                 console.error('Backend save failed, saving to localStorage only:', error);
-                this.saveToLocalStorage(gameConfig);
+                this.saveToLocalStorageWithDialog(gameConfig);
                 return of(null);
             })
         ).subscribe(savedConfig => {
@@ -178,6 +183,9 @@ export class ConfigComponent implements OnInit {
                     duration: 3000,
                     panelClass: ['success-snackbar']
                 });
+
+                // Show training dialog after successful save
+                this.showTrainingDialog(gameConfig);
             }
         });
     }
@@ -229,6 +237,27 @@ export class ConfigComponent implements OnInit {
         }
     }
 
+    /**
+     * Show dialog asking if user wants to train neural network with new configuration
+     */
+    private showTrainingDialog(gameConfig: GameConfig): void {
+        const dialogRef = this.dialog.open(TrainingConfirmDialogComponent, {
+            width: 'auto',
+            maxWidth: '500px',
+            disableClose: false,
+            autoFocus: true
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result === true) {
+                // User wants to start training - navigate to training page with config
+                this.router.navigate(['/training'], {
+                    state: { gameConfig: gameConfig }
+                });
+            }
+        });
+    }
+
 
 
     /**
@@ -242,6 +271,29 @@ export class ConfigComponent implements OnInit {
                 duration: 3000,
                 panelClass: ['success-snackbar']
             });
+        } catch (error) {
+            console.error('Failed to save to localStorage:', error);
+            this.snackBar.open('Failed to save configuration', 'Close', {
+                duration: 3000,
+                panelClass: ['error-snackbar']
+            });
+        }
+    }
+
+    /**
+     * Save configuration to localStorage and show training dialog
+     */
+    private saveToLocalStorageWithDialog(config: GameConfig): void {
+        try {
+            localStorage.setItem('amebaGameConfig', JSON.stringify(config));
+
+            this.snackBar.open('Configuration saved locally', 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+            });
+
+            // Show training dialog after successful local save
+            this.showTrainingDialog(config);
         } catch (error) {
             console.error('Failed to save to localStorage:', error);
             this.snackBar.open('Failed to save configuration', 'Close', {
