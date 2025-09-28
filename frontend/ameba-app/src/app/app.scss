@@ -1,0 +1,24 @@
+// Main app layout
+.main-content {
+    min-height: calc(100vh - 64px); // Subtract toolbar height
+    background-color: var(--mat-sys-surface-container-lowest);
+}
+
+// Legacy button styles (can be removed if not used)
+.round-green-button {
+    display: inline-block;
+    padding: 0.5em 1.5em;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover,
+    &:focus {
+        background-color: #218838;
+        outline: none;
+    }
+}
