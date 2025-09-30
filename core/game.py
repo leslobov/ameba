@@ -1,11 +1,11 @@
 import json
 
-from src.ameba import Ameba
-from src.shared.visible_area import CalculateVisibleAreaService
-from src.config_classes.game_config import GameConfig
-from src.play_desk import PlayDesk
+from core.ameba import Ameba
+from core.shared.visible_area import CalculateVisibleAreaService
+from core.config_classes.game_config import GameConfig
+from core.play_desk import PlayDesk
 
-from src.neural_network.factory import NeuralNetworkType, get_neural_network
+from core.neural_network.factory import NeuralNetworkType, get_neural_network
 
 
 class Game:

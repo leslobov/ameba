@@ -1,9 +1,9 @@
 from typing import Optional, Sequence
 
-from src.abstract_classes.energy_item import EnergyItem
-from src.shared.position import Position
-from src.types.desk_entity import DeskEntity
-from src.calculations.get_entity_by_position import find_entity_by_position
+from core.abstract_classes.energy_item import EnergyItem
+from core.shared.position import Position
+from core.types.desk_entity import DeskEntity
+from core.calculations.get_entity_by_position import find_entity_by_position
 
 
 class VisibleEntities:

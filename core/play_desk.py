@@ -1,12 +1,12 @@
 import random
 
-from src.calculations.get_entity_by_position import find_entity_by_position
-from src.shared.visible_area import CalculateVisibleAreaService
+from core.calculations.get_entity_by_position import find_entity_by_position
+from core.shared.visible_area import CalculateVisibleAreaService
 
-from src.food import Food
-from src.config_classes.play_desk_config import PlayDeskConfig
-from src.ameba import Ameba
-from src.shared.position import Position
+from core.food import Food
+from core.config_classes.play_desk_config import PlayDeskConfig
+from core.ameba import Ameba
+from core.shared.position import Position
 
 
 class PlayDesk:

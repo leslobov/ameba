@@ -1,8 +1,8 @@
 import unittest
 
-from src.shared.visible_area import CalculateVisibleAreaService
-from src.play_desk import Position
-from src.food import Food
+from core.shared.visible_area import CalculateVisibleAreaService
+from core.play_desk import Position
+from core.food import Food
 
 
 class TestCalculateVisibleArea(unittest.TestCase):

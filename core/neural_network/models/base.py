@@ -3,12 +3,12 @@ import torch
 import torch.nn as nn
 from torch.types import Number
 
-from src.neural_network.calculations.find_closest_energy_direction import (
+from core.neural_network.calculations.find_closest_energy_direction import (
     closest_energy_direction,
 )
-from src.config_classes.neural_network_config import NeuralNetworkConfig
-from src.shared.visible_area import VisibleEntities
-from src.neural_network.abstract_classes.neural_network_model import NeuralNetwork
+from core.config_classes.neural_network_config import NeuralNetworkConfig
+from core.shared.visible_area import VisibleEntities
+from core.neural_network.abstract_classes.neural_network_model import NeuralNetwork
 
 
 class BaseNeuralNetwork(NeuralNetwork):
@@ -96,7 +96,7 @@ class BaseNeuralNetwork(NeuralNetwork):
 
 if __name__ == "__main__":
     import json
-    from src.config_classes.game_config import GameConfig
+    from core.config_classes.game_config import GameConfig
 
     config_path = os.path.join(os.environ["PROJECTPATH"], "config.json")
     with open(config_path, "r") as file_json:

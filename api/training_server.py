@@ -14,8 +14,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 # Import required modules
-from src.neural_network.models.base import BaseNeuralNetwork
-from src.config_classes.game_config import GameConfig
+from core.neural_network.models.base import BaseNeuralNetwork
+from core.config_classes.game_config import GameConfig
 
 # FastAPI app
 app = FastAPI(
@@ -97,7 +97,7 @@ async def train_neural_network(request: TrainingRequest):
 
         # Save the trained model state
         net_state_path = (
-            project_root / "src" / "neural_network" / "net_state" / "base.pth"
+            project_root / "core" / "neural_network" / "net_state" / "base.pth"
         )
         net_state_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -123,7 +123,7 @@ async def get_training_status():
     """Get the current training status and model information"""
     try:
         net_state_path = (
-            project_root / "src" / "neural_network" / "net_state" / "base.pth"
+            project_root / "core" / "neural_network" / "net_state" / "base.pth"
         )
         model_exists = net_state_path.exists()
 

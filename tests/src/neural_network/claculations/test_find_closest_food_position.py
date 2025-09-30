@@ -1,6 +1,6 @@
 import unittest
 import torch
-from src.neural_network.calculations.find_closest_energy_direction import (
+from core.neural_network.calculations.find_closest_energy_direction import (
     find_closest_food_position,
 )
 

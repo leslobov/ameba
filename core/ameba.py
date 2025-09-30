@@ -1,12 +1,12 @@
 import torch
 
-from src.shared.visible_area import VisibleEntities
-from src.abstract_classes.energy_item import EnergyItem
-from src.abstract_classes.position_item import PositionItem
+from core.shared.visible_area import VisibleEntities
+from core.abstract_classes.energy_item import EnergyItem
+from core.abstract_classes.position_item import PositionItem
 
-from src.shared.position import Position
-from src.config_classes.ameba_config import AmebaConfig
-from src.neural_network.abstract_classes.neural_network_model import NeuralNetwork
+from core.shared.position import Position
+from core.config_classes.ameba_config import AmebaConfig
+from core.neural_network.abstract_classes.neural_network_model import NeuralNetwork
 
 
 class Ameba(PositionItem, EnergyItem):

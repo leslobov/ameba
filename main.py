@@ -1,7 +1,7 @@
 import sys
 import os
 
-from src.game import Game
+from core.game import Game
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 

@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 
 from torch.types import Number
 
-from src.config_classes.neural_network_config import NeuralNetworkConfig
-from src.shared.visible_area import VisibleEntities
+from core.config_classes.neural_network_config import NeuralNetworkConfig
+from core.shared.visible_area import VisibleEntities
 
 
 class NeuralNetwork(ABC):

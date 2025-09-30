@@ -19,8 +19,8 @@ def test_training():
 
     # Test imports
     try:
-        from src.neural_network.models.base import BaseNeuralNetwork
-        from src.config_classes.game_config import GameConfig
+        from core.neural_network.models.base import BaseNeuralNetwork
+        from core.config_classes.game_config import GameConfig
 
         print("✓ Neural network imports successful")
     except Exception as e:
@@ -62,7 +62,7 @@ def test_training():
 
         # Test saving model state
         net_state_path = (
-            project_root / "src" / "neural_network" / "net_state" / "base.pth"
+            project_root / "core" / "neural_network" / "net_state" / "base.pth"
         )
         net_state_path.parent.mkdir(parents=True, exist_ok=True)
 

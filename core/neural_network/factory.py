@@ -1,6 +1,6 @@
 import enum
 
-from src.neural_network.models.base import BaseNeuralNetwork
+from core.neural_network.models.base import BaseNeuralNetwork
 
 
 class NeuralNetworkType(enum.IntEnum):
