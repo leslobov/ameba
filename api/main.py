@@ -3,9 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import uvicorn
 
-# Import the config module
+# Import the modules
 from config import router as config_router
 from training import router as training_router
+from movement import router as movement_router
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -29,6 +30,7 @@ app.add_middleware(
 # Include routers
 app.include_router(config_router)
 app.include_router(training_router)
+app.include_router(movement_router)
 
 # Path to config file (for health check)
 CONFIG_FILE_PATH = Path(__file__).parent.parent / "config.json"
@@ -43,10 +45,11 @@ async def root():
         "endpoints": {
             "config": "/api/config",
             "training": "/api/training",
+            "movement": "/api/movement",
             "health": "/health",
             "docs": "/docs",
         },
-        "modules": ["config", "training"],
+        "modules": ["config", "training", "movement"],
     }
 
 
@@ -56,7 +59,7 @@ async def health_check():
     return {
         "status": "healthy",
         "config_file_exists": CONFIG_FILE_PATH.exists(),
-        "modules_loaded": ["config", "training"],
+        "modules_loaded": ["config", "training", "movement"],
     }
 
 
