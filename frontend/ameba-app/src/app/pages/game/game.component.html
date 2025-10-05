@@ -1,0 +1,110 @@
+<div class="game-container">
+    <mat-card class="game-card">
+        <mat-card-header>
+            <mat-card-title>
+                <mat-icon>videogame_asset</mat-icon>
+                Game Arena
+                @if (isLoading()) {
+                <mat-spinner diameter="20"></mat-spinner>
+                }
+            </mat-card-title>
+            <mat-card-subtitle>
+                @if (gameConfig()) {
+                {{gameConfig()!.play_desk.rows}}×{{gameConfig()!.play_desk.columns}} simulation environment
+                } @else {
+                Ameba simulation environment
+                }
+            </mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content class="game-content">
+            @if (isLoading()) {
+            <div class="loading-state">
+                <mat-spinner></mat-spinner>
+                <p>Loading game configuration...</p>
+            </div>
+            } @else if (gameConfig()) {
+            <!-- Game Statistics -->
+            <div class="game-stats">
+                <div class="stat-item">
+                    <mat-icon>energy_savings_leaf</mat-icon>
+                    <span>Energy per Food: {{gameConfig()!.play_desk.energy_per_food}}</span>
+                </div>
+                <div class="stat-item">
+                    <mat-icon>battery_full</mat-icon>
+                    <span>Total Energy: {{gameConfig()!.play_desk.total_energy}}</span>
+                </div>
+                <div class="stat-item">
+                    <mat-icon>visibility</mat-icon>
+                    <span>Ameba Vision:
+                        {{gameConfig()!.ameba.visible_rows}}×{{gameConfig()!.ameba.visible_columns}}</span>
+                </div>
+            </div>
+
+            <!-- Game Grid -->
+            <div class="game-grid-container">
+                <table class="game-table">
+                    @for (row of getGameRows(); track $index) {
+                    <tr class="game-row">
+                        @for (cell of row; track cell.row + '-' + cell.col) {
+                        <td class="game-cell" [ngClass]="getCellClass(cell)" [title]="getCellTitle(cell)">
+                            @switch (cell.type) {
+                            @case ('ameba') {
+                            <mat-icon class="cell-icon ameba-icon">pest_control</mat-icon>
+                            }
+                            @case ('food') {
+                            <mat-icon class="cell-icon food-icon">local_dining</mat-icon>
+                            }
+                            @default {
+                            <span class="empty-cell"></span>
+                            }
+                            }
+                        </td>
+                        }
+                    </tr>
+                    }
+                </table>
+            </div>
+
+            <!-- Game Info -->
+            <div class="game-info">
+                <p><strong>Amebas:</strong> {{getAmebaCount()}} | <strong>Food:</strong> {{getFoodCount()}} |
+                    <strong>Empty:</strong> {{getEmptyCount()}}</p>
+            </div>
+            } @else {
+            <div class="error-state">
+                <mat-icon>error</mat-icon>
+                <p>Failed to load game configuration</p>
+            </div>
+            }
+        </mat-card-content>
+
+        <mat-card-actions class="game-actions">
+            <button mat-raised-button color="primary" [disabled]="!gameConfig() || isGameRunning()"
+                (click)="startGame()">
+                <mat-icon>play_arrow</mat-icon>
+                Start Game
+            </button>
+
+            <button mat-raised-button color="warn" [disabled]="!isGameRunning()" (click)="stopGame()">
+                <mat-icon>stop</mat-icon>
+                Stop Game
+            </button>
+
+            <button mat-button (click)="resetGame()" [disabled]="!gameConfig()">
+                <mat-icon>refresh</mat-icon>
+                Reset
+            </button>
+
+            <button mat-button (click)="loadConfiguration()">
+                <mat-icon>settings</mat-icon>
+                Reload Config
+            </button>
+
+            <button mat-stroked-button routerLink="/">
+                <mat-icon>home</mat-icon>
+                Back to Home
+            </button>
+        </mat-card-actions>
+    </mat-card>
+</div>
