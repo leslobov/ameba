@@ -9,12 +9,11 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from .models import (
-    GameConfig,
     ConfigSection,
     ApiResponse,
     ConfigSectionResponse,
 )
-from core.config_classes.game_config import GameConfig as CoreGameConfig
+from core.config_classes.game_config import GameConfig
 from core.out.config_handler import ConfigHandler
 
 # Initialize router
@@ -64,21 +63,7 @@ async def update_config(config: GameConfig):
         Updated configuration data
     """
     try:
-        # Convert Pydantic model to dict and compute input_size
-        config_data = config.model_dump()
-
-        # Add input_size to neural_network config
-        ameba_config = config_data["ameba"]
-        visible_rows = ameba_config["visible_rows"]
-        visible_columns = ameba_config["visible_columns"]
-        config_data["neural_network"]["input_size"] = (2 * visible_rows + 1) * (
-            2 * visible_columns + 1
-        )
-
-        # Convert to core dataclass
-        core_config = CoreGameConfig.from_dict(config_data)
-
-        result = config_handler.update_config(core_config)
+        result = config_handler.update_config(config)
         if result.success:
             return JSONResponse(
                 content={
@@ -102,7 +87,9 @@ async def update_config(config: GameConfig):
     response_model=ConfigSectionResponse,
     summary="Get specific configuration section",
 )
-async def get_config_section(section: ConfigSection):
+async def get_config_section(
+    section: ConfigSection, service: ConfigService = Depends(get_config_service)
+):
     """
     Get a specific configuration section
 
@@ -113,18 +100,15 @@ async def get_config_section(section: ConfigSection):
         Configuration data for the specified section
     """
     try:
-        result = config_handler.get_config_section(section)
-        if result.success:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "section": section,
-                    "data": result.data,
-                    "message": result.message,
-                }
-            )
-        else:
-            raise HTTPException(status_code=404, detail=result.error_details)
+        section_data = service.get_config_section(section)
+        return JSONResponse(
+            content={
+                "success": True,
+                "section": section,
+                "data": section_data,
+                "message": f"Configuration section '{section}' loaded successfully",
+            }
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -139,6 +123,7 @@ async def get_config_section(section: ConfigSection):
 async def update_config_section(
     section: ConfigSection,
     section_data: Dict[str, Any],
+    service: ConfigService = Depends(get_config_service),
 ):
     """
     Update a specific configuration section
@@ -151,18 +136,15 @@ async def update_config_section(
         Updated section data
     """
     try:
-        result = config_handler.update_config_section(section, section_data)
-        if result.success:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "section": section,
-                    "message": result.message,
-                    "data": result.data,
-                }
-            )
-        else:
-            raise HTTPException(status_code=400, detail=result.error_details)
+        updated_section = service.update_config_section(section, section_data)
+        return JSONResponse(
+            content={
+                "success": True,
+                "section": section,
+                "message": f"Configuration section '{section}' updated successfully",
+                "data": updated_section,
+            }
+        )
     except HTTPException:
         raise
     except Exception as e:
@@ -174,7 +156,9 @@ async def update_config_section(
 @router.post(
     "/reset", response_model=ApiResponse, summary="Reset configuration to defaults"
 )
-async def reset_config_to_defaults():
+async def reset_config_to_defaults(
+    service: ConfigService = Depends(get_config_service),
+):
     """
     Reset the complete configuration to default values
 
@@ -182,17 +166,14 @@ async def reset_config_to_defaults():
         Default configuration data
     """
     try:
-        result = config_handler.reset_to_defaults()
-        if result.success:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "message": result.message,
-                    "data": result.data,
-                }
-            )
-        else:
-            raise HTTPException(status_code=500, detail=result.error_details)
+        default_config = service.reset_to_defaults()
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": "Configuration reset to defaults successfully",
+                "data": default_config.model_dump(),
+            }
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error resetting configuration: {str(e)}"
@@ -204,7 +185,7 @@ async def reset_config_to_defaults():
     response_model=ApiResponse,
     summary="Get configuration file information",
 )
-async def get_config_info():
+async def get_config_info(service: ConfigService = Depends(get_config_service)):
     """
     Get information about the configuration file
 
@@ -212,18 +193,12 @@ async def get_config_info():
         Configuration file status and metadata
     """
     try:
-        info = config_handler.get_config_info()
+        info = service.get_config_info()
         return JSONResponse(
             content={
                 "success": True,
                 "message": "Configuration info retrieved successfully",
-                "data": {
-                    "exists": info.exists,
-                    "path": info.path,
-                    "size": info.size,
-                    "last_modified": info.last_modified,
-                    "is_valid": info.is_valid,
-                },
+                "data": info,
             }
         )
     except Exception as e:
@@ -235,7 +210,7 @@ async def get_config_info():
 @router.get(
     "/validate", response_model=ApiResponse, summary="Validate current configuration"
 )
-async def validate_config():
+async def validate_config(service: ConfigService = Depends(get_config_service)):
     """
     Validate the current configuration structure
 
@@ -243,25 +218,31 @@ async def validate_config():
         Validation status and any issues found
     """
     try:
-        result = config_handler.validate_config()
-        if result.success:
-            return JSONResponse(
-                content={
-                    "success": True,
-                    "message": result.message,
-                    "data": result.data,
-                }
-            )
-        else:
-            return JSONResponse(
-                status_code=400,
-                content={
-                    "success": False,
-                    "message": result.message,
-                    "data": result.data,
+        config_data = service.load_config()
+        service.validate_config_structure(config_data)
+
+        # Try to parse as Pydantic model for full validation
+        config = GameConfig(**config_data)
+
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": "Configuration is valid",
+                "data": {
+                    "valid": True,
+                    "sections": list(config_data.keys()),
+                    "validated_at": "now",
                 },
-            )
+            }
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error validating configuration: {str(e)}"
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "message": "Configuration validation failed",
+                "data": {"valid": False, "error": str(e)},
+            },
         )

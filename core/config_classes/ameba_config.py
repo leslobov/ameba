@@ -20,3 +20,12 @@ class AmebaConfig:
             initial_energy=data["initial_energy"],
             lost_energy_per_move=data["lost_energy_per_move"],
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "threhold_of_lostness_weight_coefficient": self.threhold_of_lostness_weight_coefficient,
+            "visible_rows": self.visible_rows,
+            "visible_columns": self.visible_columns,
+            "initial_energy": self.initial_energy,
+            "lost_energy_per_move": self.lost_energy_per_move,
+        }

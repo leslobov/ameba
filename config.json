@@ -1,19 +1,20 @@
 {
-    "play_desk": {
-        "total_energy": 10000.0,
-        "energy_per_food": 50.0,
-        "rows": 32,
-        "columns": 32
-    },
-    "ameba": {
-        "threhold_of_lostness_weight_coefficient": 0.2,
-        "visible_rows": 5,
-        "visible_columns": 5,
-        "initial_energy": 100.0,
-        "lost_energy_per_move": 1.0
-    },
-    "neural_network": {
-        "initial_hidden_layers": 1,
-        "initial_neurons_on_layer": 32
-    }
+  "play_desk": {
+    "rows": 32,
+    "columns": 32,
+    "total_energy": 10000.0,
+    "energy_per_food": 50.0
+  },
+  "ameba": {
+    "threhold_of_lostness_weight_coefficient": 0.2,
+    "visible_rows": 5,
+    "visible_columns": 5,
+    "initial_energy": 100.0,
+    "lost_energy_per_move": 1.0
+  },
+  "neural_network": {
+    "initial_hidden_layers": 1,
+    "initial_neurons_on_layer": 32,
+    "input_size": 121
+  }
 }

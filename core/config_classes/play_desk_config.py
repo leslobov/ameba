@@ -16,3 +16,11 @@ class PlayDeskConfig:
             total_energy=data["total_energy"],
             energy_per_food=data["energy_per_food"],
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "rows": self.rows,
+            "columns": self.columns,
+            "total_energy": self.total_energy,
+            "energy_per_food": self.energy_per_food,
+        }

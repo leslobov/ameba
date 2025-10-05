@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import Dict, Any, Literal
+from pydantic import BaseModel, Field, validator
+from typing import Dict, Any, Literal, Optional
 
 
 class PlayDeskConfig(BaseModel):

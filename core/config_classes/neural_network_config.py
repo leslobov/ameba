@@ -14,3 +14,10 @@ class NeuralNetworkConfig:
             initial_neurons_on_layer=data["initial_neurons_on_layer"],
             input_size=data["input_size"],
         )
+
+    def to_dict(self) -> dict:
+        return {
+            "initial_hidden_layers": self.initial_hidden_layers,
+            "initial_neurons_on_layer": self.initial_neurons_on_layer,
+            "input_size": self.input_size,
+        }
