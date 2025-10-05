@@ -84,11 +84,12 @@ export class GameComponent implements OnInit, OnDestroy {
     this.loadConfiguration();
 
     // Subscribe to movement service game state updates
-    this.gameSubscription = this.movementService.gameState$.subscribe(gameState => {
-      if (gameState) {
-        this.updateGridFromGameState(gameState);
-      }
-    });
+    // Temporarily disabled to prevent automatic updates that might cause issues
+    // this.gameSubscription = this.movementService.gameState$.subscribe(gameState => {
+    //   if (gameState) {
+    //     this.updateGridFromGameState(gameState);
+    //   }
+    // });
   }
 
   ngOnDestroy(): void {
@@ -209,10 +210,41 @@ export class GameComponent implements OnInit, OnDestroy {
 
     const rows: Cell[][] = [];
     const grid = this.gameGrid();
+    const expectedRows = config.play_desk.rows;
+    const expectedCols = config.play_desk.columns;
 
-    for (let row = 0; row < config.play_desk.rows; row++) {
+    // Create rows matrix ensuring all rows exist
+    for (let row = 0; row < expectedRows; row++) {
       const rowCells = grid.filter(cell => cell.row === row).sort((a, b) => a.col - b.col);
-      rows.push(rowCells);
+
+      // Ensure each row has the expected number of columns
+      if (rowCells.length !== expectedCols) {
+        console.warn(`Row ${row} has ${rowCells.length} cells, expected ${expectedCols}`);
+
+        // Fill missing cells if needed
+        const fullRow: Cell[] = [];
+        for (let col = 0; col < expectedCols; col++) {
+          const existingCell = rowCells.find(cell => cell.col === col);
+          if (existingCell) {
+            fullRow.push(existingCell);
+          } else {
+            // Create missing empty cell
+            fullRow.push({
+              row: row,
+              col: col,
+              type: 'empty'
+            });
+          }
+        }
+        rows.push(fullRow);
+      } else {
+        rows.push(rowCells);
+      }
+    }
+
+    // Debug check
+    if (rows.length !== expectedRows) {
+      console.error(`getGameRows returned ${rows.length} rows, expected ${expectedRows}`);
     }
 
     return rows;
@@ -253,7 +285,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
     this.isMoving.set(true);
     try {
-      const gameState = this.movementService.convertToApiFormat(this.gameGrid(), this.gameConfig()!);
+      const currentGrid = this.gameGrid();
+      const gameState = this.movementService.convertToApiFormat(currentGrid, this.gameConfig()!);
+
+      console.log('Before movement:', {
+        gridCells: currentGrid.length,
+        amebas: gameState.amebas.length,
+        foods: gameState.foods.length,
+        boardSize: gameState.board_size
+      });
+
       const request: MoveRequest = {
         game_state: gameState,
         iterations: 1
@@ -261,6 +302,20 @@ export class GameComponent implements OnInit, OnDestroy {
 
       const response = await this.movementService.moveAmebas(request).toPromise();
       if (response?.success) {
+        console.log('Movement response:', {
+          movements: response.movements.length,
+          updatedState: response.updated_game_state ? {
+            amebas: response.updated_game_state.amebas.length,
+            foods: response.updated_game_state.foods.length,
+            boardSize: response.updated_game_state.board_size
+          } : null
+        });
+
+        // Manually update the grid to ensure consistency
+        if (response.updated_game_state) {
+          this.updateGridFromGameState(response.updated_game_state);
+        }
+
         const stats = this.movementStats();
         this.movementStats.set({
           iterations: stats.iterations + 1,
@@ -270,6 +325,12 @@ export class GameComponent implements OnInit, OnDestroy {
         this.snackBar.open(`Movement completed! ${response.movements.length} amebas moved.`, 'Close', {
           duration: 2000,
           panelClass: ['success-snackbar']
+        });
+      } else {
+        console.error('Movement failed:', response?.message);
+        this.snackBar.open('Movement failed: ' + (response?.message || 'Unknown error'), 'Close', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
         });
       }
     } catch (error) {
@@ -384,7 +445,104 @@ export class GameComponent implements OnInit, OnDestroy {
    * Update grid from API game state
    */
   private updateGridFromGameState(gameState: GameState): void {
-    const newGrid = this.movementService.convertFromApiFormat(gameState);
+    const config = this.gameConfig();
+    if (!config) {
+      console.error('No game config available for grid update');
+      return;
+    }
+
+    console.log('Updating grid from API state:', {
+      apiState: gameState.board_size,
+      configSize: { rows: config.play_desk.rows, columns: config.play_desk.columns },
+      amebas: gameState.amebas.length,
+      foods: gameState.foods.length
+    });
+
+    // Use config dimensions instead of API dimensions to maintain consistency
+    const newGrid = this.convertApiToGrid(gameState, config);
+
+    // Verify the grid has the correct number of cells
+    const expectedCells = config.play_desk.rows * config.play_desk.columns;
+    if (newGrid.length !== expectedCells) {
+      console.error('Grid size mismatch:', {
+        expected: expectedCells,
+        actual: newGrid.length,
+        dimensions: `${config.play_desk.rows}x${config.play_desk.columns}`
+      });
+      return;
+    }
+
     this.gameGrid.set(newGrid);
+
+    // Debug info
+    console.log('Grid updated successfully:', {
+      amebas: this.getAmebaCount(),
+      food: this.getFoodCount(),
+      empty: this.getEmptyCount(),
+      total: newGrid.length,
+      rowsInDisplay: this.getGameRows().length
+    });
+  }
+
+  /**
+   * Convert API game state to frontend grid using config dimensions
+   */
+  private convertApiToGrid(gameState: GameState, config: GameConfig): Cell[] {
+    const grid: Cell[] = [];
+    const rows = config.play_desk.rows;
+    const columns = config.play_desk.columns;
+
+    // Initialize empty grid based on config dimensions (not API dimensions)
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < columns; col++) {
+        grid.push({
+          row: row,
+          col: col,
+          type: 'empty'
+        });
+      }
+    }
+
+    // Place amebas - with bounds checking against config dimensions
+    gameState.amebas.forEach(ameba => {
+      const row = ameba.position.row;
+      const col = ameba.position.column;
+
+      if (row >= 0 && row < rows && col >= 0 && col < columns) {
+        const index = row * columns + col;
+        if (index >= 0 && index < grid.length) {
+          grid[index] = {
+            row: row,
+            col: col,
+            type: 'ameba',
+            energy: ameba.energy || 100
+          };
+        }
+      } else {
+        console.warn(`Invalid ameba position: (${row}, ${col}) - config bounds: ${rows}x${columns}`);
+      }
+    });
+
+    // Place foods - with bounds checking against config dimensions
+    gameState.foods.forEach(food => {
+      const row = food.position.row;
+      const col = food.position.column;
+
+      if (row >= 0 && row < rows && col >= 0 && col < columns) {
+        const index = row * columns + col;
+        if (index >= 0 && index < grid.length) {
+          grid[index] = {
+            row: row,
+            col: col,
+            type: 'food',
+            energy: food.energy || 50
+          };
+        }
+      } else {
+        console.warn(`Invalid food position: (${row}, ${col}) - config bounds: ${rows}x${columns}`);
+      }
+    });
+
+    return grid;
   }
 }

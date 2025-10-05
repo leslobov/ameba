@@ -170,42 +170,59 @@ export class MovementService {
      */
     convertFromApiFormat(gameState: GameState): any[] {
         const grid: any[] = [];
-        const totalCells = gameState.board_size.rows * gameState.board_size.columns;
+        const rows = gameState.board_size.rows;
+        const columns = gameState.board_size.columns;
 
-        // Initialize empty grid
-        for (let row = 0; row < gameState.board_size.rows; row++) {
-            for (let col = 0; col < gameState.board_size.columns; col++) {
+        // Initialize empty grid with proper row/column structure
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < columns; col++) {
                 grid.push({
-                    row,
-                    col,
+                    row: row,
+                    col: col,
                     type: 'empty'
                 });
             }
         }
 
-        // Place amebas
+        // Place amebas - with bounds checking
         gameState.amebas.forEach(ameba => {
-            const index = ameba.position.row * gameState.board_size.columns + ameba.position.column;
-            if (index >= 0 && index < totalCells) {
-                grid[index] = {
-                    row: ameba.position.row,
-                    col: ameba.position.column,
-                    type: 'ameba',
-                    energy: ameba.energy
-                };
+            const row = ameba.position.row;
+            const col = ameba.position.column;
+
+            // Check bounds to prevent invalid positions
+            if (row >= 0 && row < rows && col >= 0 && col < columns) {
+                const index = row * columns + col;
+                if (index >= 0 && index < grid.length) {
+                    grid[index] = {
+                        row: row,
+                        col: col,
+                        type: 'ameba',
+                        energy: ameba.energy || 100
+                    };
+                }
+            } else {
+                console.warn(`Invalid ameba position: (${row}, ${col}) - bounds: ${rows}x${columns}`);
             }
         });
 
-        // Place foods
+        // Place foods - with bounds checking
         gameState.foods.forEach(food => {
-            const index = food.position.row * gameState.board_size.columns + food.position.column;
-            if (index >= 0 && index < totalCells) {
-                grid[index] = {
-                    row: food.position.row,
-                    col: food.position.column,
-                    type: 'food',
-                    energy: food.energy
-                };
+            const row = food.position.row;
+            const col = food.position.column;
+
+            // Check bounds to prevent invalid positions
+            if (row >= 0 && row < rows && col >= 0 && col < columns) {
+                const index = row * columns + col;
+                if (index >= 0 && index < grid.length) {
+                    grid[index] = {
+                        row: row,
+                        col: col,
+                        type: 'food',
+                        energy: food.energy || 50
+                    };
+                }
+            } else {
+                console.warn(`Invalid food position: (${row}, ${col}) - bounds: ${rows}x${columns}`);
             }
         });
 
