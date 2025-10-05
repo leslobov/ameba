@@ -68,9 +68,84 @@
 
             <!-- Game Info -->
             <div class="game-info">
-                <p><strong>Amebas:</strong> {{getAmebaCount()}} | <strong>Food:</strong> {{getFoodCount()}} |
-                    <strong>Empty:</strong> {{getEmptyCount()}}</p>
+                <div class="info-row">
+                    <span><strong>Amebas:</strong> {{getAmebaCount()}}</span>
+                    <span><strong>Food:</strong> {{getFoodCount()}}</span>
+                    <span><strong>Empty:</strong> {{getEmptyCount()}}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Iterations:</strong> {{movementStats().iterations}}</span>
+                    @if (movementStats().lastMoveTime) {
+                    <span><strong>Last Move:</strong> {{movementStats().lastMoveTime | date:'medium'}}</span>
+                    }
+                </div>
             </div>
+
+            <!-- Movement Controls -->
+            @if (gameConfig() && isGameRunning()) {
+            <div class="movement-controls">
+                <mat-card class="controls-card">
+                    <mat-card-title>
+                        <mat-icon>control_camera</mat-icon>
+                        Movement Controls
+                    </mat-card-title>
+                    <mat-card-content>
+                        <!-- Single Step Controls -->
+                        <div class="control-section">
+                            <h4>Single Step</h4>
+                            <button mat-raised-button color="accent" [disabled]="isMoving()" (click)="singleStep()">
+                                @if (isMoving()) {
+                                <mat-spinner diameter="16"></mat-spinner>
+                                } @else {
+                                <mat-icon>skip_next</mat-icon>
+                                }
+                                Single Step
+                            </button>
+                        </div>
+
+                        <!-- Auto Movement Controls -->
+                        <div class="control-section">
+                            <h4>Automatic Movement</h4>
+                            <div class="auto-controls">
+                                @if (autoMove()) {
+                                <button mat-raised-button color="warn" [disabled]="isMoving()"
+                                    (click)="toggleAutoMove()">
+                                    <mat-icon>pause</mat-icon>
+                                    Stop Auto
+                                </button>
+                                } @else {
+                                <button mat-raised-button color="primary" [disabled]="isMoving()"
+                                    (click)="toggleAutoMove()">
+                                    <mat-icon>play_arrow</mat-icon>
+                                    Start Auto
+                                </button>
+                                }
+
+                                <div class="speed-control">
+                                    <label>Speed (ms): {{simulationSpeed()}}</label>
+                                    <input type="range" min="100" max="5000" step="100" [value]="simulationSpeed()"
+                                        (input)="onSpeedChange($event)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Full Simulation -->
+                        <div class="control-section">
+                            <h4>Full Simulation</h4>
+                            <button mat-raised-button color="primary" [disabled]="isMoving()"
+                                (click)="runFullSimulation()">
+                                @if (isMoving()) {
+                                <mat-spinner diameter="16"></mat-spinner>
+                                } @else {
+                                <mat-icon>fast_forward</mat-icon>
+                                }
+                                Run 50 Steps
+                            </button>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+            }
             } @else {
             <div class="error-state">
                 <mat-icon>error</mat-icon>
