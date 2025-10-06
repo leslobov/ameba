@@ -164,7 +164,9 @@ class MovementHandler:
 
             move_delta = ameba.move(visible_area)
             ameba._position += move_delta
-
+            ameba._position.adjust_position(
+                self.game.config.play_desk.rows, self.game.config.play_desk.columns
+            )
             new_position = (ameba.get_position().row, ameba.get_position().column)
             energy_change = ameba.get_energy() - old_energy
 

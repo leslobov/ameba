@@ -51,6 +51,7 @@ class PlayDesk:
                 )
             )
             ameba._position += move_position
+            ameba._position.adjust_position(self._config.rows, self._config.columns)
         self._cleanup_play_desk()
         self.generate_food()
 
