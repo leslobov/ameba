@@ -37,12 +37,19 @@ export interface MoveRequest {
     iterations: number;
 }
 
+export interface FoodGenerationInfo {
+    total_foods_consumed: number;
+    total_foods_generated: number;
+    net_food_change: number;
+}
+
 export interface MoveResponse {
     success: boolean;
     message: string;
     movements: MovementResult[];
     updated_game_state?: GameState;
     iterations_completed: number;
+    food_generation?: FoodGenerationInfo;
 }
 
 export interface SimulationRequest {

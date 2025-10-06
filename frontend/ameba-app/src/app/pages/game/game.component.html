@@ -47,7 +47,9 @@
                     @for (row of getGameRows(); track $index) {
                     <tr class="game-row">
                         @for (cell of row; track cell.row + '-' + cell.col) {
-                        <td class="game-cell" [ngClass]="getCellClass(cell)" [title]="getCellTitle(cell)">
+                        <td class="game-cell" [ngClass]="getCellClass(cell)" [title]="getCellTitle(cell)"
+                            [style.--move-x]="getCellMoveX(cell)" [style.--move-y]="getCellMoveY(cell)"
+                            [attr.data-energy-gain]="getCellEnergyGain(cell)">
                             @switch (cell.type) {
                             @case ('ameba') {
                             <mat-icon class="cell-icon ameba-icon">pest_control</mat-icon>
@@ -100,6 +102,14 @@
                                 <mat-icon>skip_next</mat-icon>
                                 }
                                 Single Step
+                            </button>
+                            <button mat-stroked-button color="primary" [disabled]="isMoving()" (click)="animatedStep()">
+                                @if (isMoving()) {
+                                <mat-spinner diameter="16"></mat-spinner>
+                                } @else {
+                                <mat-icon>auto_awesome</mat-icon>
+                                }
+                                Animated Step
                             </button>
                         </div>
 
