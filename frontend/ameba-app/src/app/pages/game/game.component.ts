@@ -360,10 +360,11 @@ export class GameComponent implements OnInit, OnDestroy {
           foodGeneration: response.food_generation
         });
 
-        // Trigger animations before updating the grid
+        // Update grid immediately and start animations in background
         if (response.updated_game_state) {
-          await this.animateMovementEffects(currentGrid, response);
           this.updateGridFromGameState(response.updated_game_state);
+          // Start animations without blocking (non-blocking)
+          this.animateMovementEffects(currentGrid, response);
         }
 
         const stats = this.movementStats();
@@ -404,7 +405,7 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Animated step - like singleStep but with enhanced visual feedback and demo animations
+   * Animated step - like singleStep but with enhanced visual feedback
    */
   async animatedStep(): Promise<void> {
     if (this.isMoving() || !this.gameConfig()) return;
@@ -415,17 +416,17 @@ export class GameComponent implements OnInit, OnDestroy {
       panelClass: ['info-snackbar']
     });
 
-    // First, demonstrate animations on existing cells
-    await this.demoAnimations();
+    // Start demo animations in background (non-blocking)
+    this.demoAnimations();
 
-    // Then call the regular single step
+    // Call the regular single step (non-blocking animations)
     await this.singleStep();
   }
 
   /**
-   * Demonstrate animations on existing food and amebas
+   * Demonstrate animations on existing food and amebas (non-blocking)
    */
-  private async demoAnimations(): Promise<void> {
+  private demoAnimations(): void {
     const currentGrid = [...this.gameGrid()];
     let hasFood = false;
     let hasAmeba = false;
@@ -446,15 +447,14 @@ export class GameComponent implements OnInit, OnDestroy {
     if (hasFood || hasAmeba) {
       this.gameGrid.set(updatedGrid);
 
-      // Wait for demo animations
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      // Clear demo animation states
-      const clearedGrid = updatedGrid.map(cell => ({
-        ...cell,
-        animationState: null
-      }));
-      this.gameGrid.set(clearedGrid);
+      // Clear demo animation states after delay (non-blocking)
+      setTimeout(() => {
+        const clearedGrid = [...this.gameGrid()].map(cell => ({
+          ...cell,
+          animationState: cell.animationState === 'consuming' || cell.animationState === 'energized' ? null : cell.animationState
+        }));
+        this.gameGrid.set(clearedGrid);
+      }, 1200);
     }
   }
 
@@ -556,9 +556,9 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Animate movement effects including food consumption and generation
+   * Animate movement effects including food consumption and generation (non-blocking)
    */
-  private async animateMovementEffects(previousGrid: Cell[], response: any): Promise<void> {
+  private animateMovementEffects(previousGrid: Cell[], response: any): void {
     if (!response.movements || response.movements.length === 0) return;
 
     const currentGrid = [...this.gameGrid()];
@@ -576,21 +576,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
       // Set up movement animations for amebas that will eat food
       foodEatingMovements.forEach((movement: any) => {
-        const fromKey = `${movement.old_position.row}-${movement.old_position.column}`;
-        const toKey = `${movement.new_position.row}-${movement.new_position.column}`;
-
-        // Find the ameba at the old position
+        // Find the ameba at the new position (after grid update)
         const amebaCell = movingGrid.find(cell =>
-          cell.row === movement.old_position.row &&
-          cell.col === movement.old_position.column &&
+          cell.row === movement.new_position.row &&
+          cell.col === movement.new_position.column &&
           cell.type === 'ameba'
         );
 
         if (amebaCell) {
           amebaCell.animationState = 'moving-to-food';
           // Display the food energy value (50) in animation instead of net energy change (49)
-          // This shows the energy value of the food being consumed, which is more intuitive
-          // The net energy change accounts for movement cost: food_energy(50) - movement_cost(1) = 49
           const foodEnergy = this.gameConfig()?.play_desk.energy_per_food || 50;
           amebaCell.movementData = {
             fromRow: movement.old_position.row,
@@ -604,81 +599,49 @@ export class GameComponent implements OnInit, OnDestroy {
 
       this.gameGrid.set(movingGrid);
 
-      // Wait for movement animation to complete
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Step 2: After movement animation, show energy gain (non-blocking)
+      setTimeout(() => {
+        const energizedGrid = [...this.gameGrid()];
+        const energizedAmebas = new Set<string>();
+
+        response.movements.forEach((movement: any) => {
+          if (movement.energy_change > 0) {
+            const key = `${movement.new_position.row}-${movement.new_position.column}`;
+            energizedAmebas.add(key);
+          }
+        });
+
+        energizedGrid.forEach(cell => {
+          const key = `${cell.row}-${cell.col}`;
+          if (energizedAmebas.has(key) && cell.type === 'ameba') {
+            cell.animationState = 'energized';
+          }
+          // Clear movement states
+          if (cell.animationState === 'moving-to-food') {
+            cell.animationState = null;
+            cell.movementData = undefined;
+          }
+        });
+
+        this.gameGrid.set(energizedGrid);
+
+        // Step 3: Clear all animation states (non-blocking)
+        setTimeout(() => {
+          const finalGrid = [...this.gameGrid()];
+          finalGrid.forEach(cell => {
+            if (cell.animationState === 'energized') {
+              cell.animationState = null;
+            }
+            cell.movementData = undefined;
+          });
+          this.gameGrid.set(finalGrid);
+        }, 1000);
+      }, 1200);
     }
-
-    // Step 2: Animate food consumption at the target positions
-    if (response.food_generation?.total_foods_consumed > 0) {
-      const consumingGrid = [...this.gameGrid()];
-      const consumedPositions = new Set<string>();
-
-      response.movements.forEach((movement: any) => {
-        if (movement.food_consumed) {
-          const key = `${movement.food_consumed.row}-${movement.food_consumed.column}`;
-          consumedPositions.add(key);
-        }
-      });
-
-      // Mark consumed food for animation
-      consumingGrid.forEach(cell => {
-        const key = `${cell.row}-${cell.col}`;
-        if (consumedPositions.has(key) && cell.type === 'food') {
-          cell.animationState = 'consuming';
-        }
-        // Clear movement states
-        if (cell.animationState === 'moving-to-food') {
-          cell.animationState = null;
-          cell.movementData = undefined;
-        }
-      });
-
-      this.gameGrid.set(consumingGrid);
-
-      // Wait for consumption animation to complete
-      await new Promise(resolve => setTimeout(resolve, 600));
-    }
-
-    // Step 3: Show final energy gain effect on amebas
-    const energizedAmebas = new Set<string>();
-    response.movements.forEach((movement: any) => {
-      if (movement.energy_change > 0) {
-        const key = `${movement.new_position.row}-${movement.new_position.column}`;
-        energizedAmebas.add(key);
-      }
-    });
-
-    if (energizedAmebas.size > 0) {
-      const energizedGrid = [...this.gameGrid()];
-
-      energizedGrid.forEach(cell => {
-        const key = `${cell.row}-${cell.col}`;
-        if (energizedAmebas.has(key) && cell.type === 'ameba') {
-          cell.animationState = 'energized';
-        }
-        // Clear any remaining states
-        if (cell.animationState === 'consuming') {
-          cell.animationState = null;
-        }
-      });
-
-      this.gameGrid.set(energizedGrid);
-
-      // Wait for energy gain animation to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
-    // Clear all animation states
-    const finalGrid = [...this.gameGrid()];
-    finalGrid.forEach(cell => {
-      cell.animationState = null;
-      cell.movementData = undefined;
-    });
-    this.gameGrid.set(finalGrid);
   }  /**
-   * Animate food generation after state update
+   * Animate food generation after state update (non-blocking)
    */
-  private async animateFoodGeneration(newFoodPositions: Position[]): Promise<void> {
+  private animateFoodGeneration(newFoodPositions: Position[]): void {
     if (newFoodPositions.length === 0) return;
 
     const updatedGrid = [...this.gameGrid()];
@@ -693,15 +656,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
     this.gameGrid.set(updatedGrid);
 
-    // Wait for spawn animation to complete
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Clear animation states
-    const finalGrid = [...this.gameGrid()];
-    finalGrid.forEach(cell => {
-      cell.animationState = null;
-    });
-    this.gameGrid.set(finalGrid);
+    // Clear animation states after delay (non-blocking)
+    setTimeout(() => {
+      const finalGrid = [...this.gameGrid()];
+      finalGrid.forEach(cell => {
+        if (cell.animationState === 'spawning') {
+          cell.animationState = null;
+        }
+      });
+      this.gameGrid.set(finalGrid);
+    }, 800);
   }
 
   /**
