@@ -298,12 +298,67 @@ export class GameComponent implements OnInit, OnDestroy {
     return rows;
   }
 
-  startGame(): void {
-    this.isGameRunning.set(true);
-    this.snackBar.open('Game started! Amebas are now active.', 'Close', {
-      duration: 3000,
-      panelClass: ['success-snackbar']
-    });
+  async startGame(): Promise<void> {
+    try {
+      // Load the actual game state from backend
+      await this.loadActualGameState();
+
+      this.isGameRunning.set(true);
+      this.snackBar.open('Game started! Loaded actual game state from backend.', 'Close', {
+        duration: 3000,
+        panelClass: ['success-snackbar']
+      });
+    } catch (error) {
+      console.error('Failed to load game state:', error);
+      this.snackBar.open('Failed to load game state from backend', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
+  }
+
+  /**
+   * Load the actual game state from backend instead of using random initialization
+   */
+  private async loadActualGameState(): Promise<void> {
+    if (!this.gameConfig()) {
+      throw new Error('Game configuration not loaded');
+    }
+
+    try {
+      // Make a movement API call with 1 iteration to get current game state
+      // We don't provide game_state, so backend will use its internal state
+      const request: MoveRequest = {
+        iterations: 1
+      } as MoveRequest;
+
+      const response = await this.movementService.moveAmebas(request).toPromise();
+
+      if (response?.success && response.updated_game_state) {
+        console.log('✅ Loaded actual game state from backend:', {
+          amebas: response.updated_game_state.amebas.length,
+          foods: response.updated_game_state.foods.length,
+          boardSize: response.updated_game_state.board_size
+        });
+
+        // Update the grid with the real backend state
+        this.updateGridFromGameState(response.updated_game_state);
+
+        // Update movement stats if we had to do a movement
+        if (response.movements && response.movements.length > 0) {
+          const stats = this.movementStats();
+          this.movementStats.set({
+            iterations: stats.iterations + 1,
+            lastMoveTime: new Date()
+          });
+        }
+      } else {
+        throw new Error('Failed to get game state from backend');
+      }
+    } catch (error) {
+      console.error('Error loading game state:', error);
+      throw error;
+    }
   }
 
   stopGame(): void {
@@ -508,6 +563,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
       const response = await this.movementService.runSimulation(request).toPromise();
       if (response?.success) {
+        // Update the game arena with the final simulation state
+        if (response.final_game_state) {
+          console.log('Updating grid with simulation final state:', {
+            amebas: response.final_game_state.amebas.length,
+            foods: response.final_game_state.foods.length,
+            totalIterations: response.total_iterations
+          });
+          this.updateGridFromGameState(response.final_game_state);
+        }
+
         const stats = this.movementStats();
         this.movementStats.set({
           iterations: stats.iterations + response.total_iterations,
