@@ -87,6 +87,8 @@ class MovementHandler:
                 }
 
             movements = []
+            total_foods_consumed = 0
+            total_foods_generated = 0
 
             # If custom game state provided, update internal state
             if game_state:
@@ -94,11 +96,20 @@ class MovementHandler:
 
             # Perform movement iterations
             for iteration in range(iterations):
-                iteration_movements = self._do_single_move_iteration(ameba_id)
-                movements.extend(iteration_movements)
+                iteration_result = self._do_single_move_iteration(ameba_id)
+                movements.extend(iteration_result["movements"])
+                total_foods_consumed += iteration_result["foods_consumed"]
+                total_foods_generated += iteration_result["foods_generated"]
 
             # Get updated game state
             updated_state = self._get_current_game_state()
+
+            # Create food generation info
+            food_generation = {
+                "total_foods_consumed": total_foods_consumed,
+                "total_foods_generated": total_foods_generated,
+                "net_food_change": total_foods_generated - total_foods_consumed,
+            }
 
             return {
                 "success": True,
@@ -106,6 +117,7 @@ class MovementHandler:
                 "movements": movements,
                 "updated_game_state": updated_state,
                 "iterations_completed": iterations,
+                "food_generation": food_generation,
             }
 
         except Exception as e:
@@ -119,12 +131,16 @@ class MovementHandler:
 
     def _do_single_move_iteration(
         self, ameba_id: Optional[int] = None
-    ) -> List[MovementResult]:
+    ) -> Dict[str, Any]:
         """Perform a single movement iteration"""
         movements = []
 
         if not self.game:
-            return movements
+            return {
+                "movements": movements,
+                "foods_consumed": 0,
+                "foods_generated": 0,
+            }
 
         if ameba_id is not None:
             # Move specific ameba
@@ -141,10 +157,62 @@ class MovementHandler:
                     movements.append(movement)
 
         # Cleanup and regenerate food
+        food_count_before = len(
+            [food for food in self.game.play_desk._foods if not food.is_deleted()]
+        )
         self.game.play_desk._cleanup_play_desk()
-        self.game.play_desk.generate_food()
+        food_count_after_cleanup = len(
+            [food for food in self.game.play_desk._foods if not food.is_deleted()]
+        )
 
-        return movements
+        # Original food generation
+        self.game.play_desk.generate_food()
+        food_count_after_generation = len(
+            [food for food in self.game.play_desk._foods if not food.is_deleted()]
+        )
+
+        # Ensure minimum food count for gameplay
+        minimum_foods = 12
+        if food_count_after_generation < minimum_foods:
+            foods_to_add = minimum_foods - food_count_after_generation
+            print(
+                f"[FOOD REGENERATION] Adding {foods_to_add} foods to reach minimum of {minimum_foods}"
+            )
+
+            from core.food import Food
+
+            for _ in range(foods_to_add):
+                try:
+                    energy = self.game.config.play_desk.energy_per_food
+                    position = self.game.play_desk.get_random_empty_position()
+                    food = Food(energy=energy, position=position)
+                    self.game.play_desk._foods.append(food)
+                except Exception as e:
+                    print(f"[FOOD REGENERATION] Error creating food: {e}")
+                    break
+
+            food_count_after_generation = len(
+                [food for food in self.game.play_desk._foods if not food.is_deleted()]
+            )
+
+        # Calculate food statistics
+        foods_consumed = food_count_before - food_count_after_cleanup
+        foods_generated = food_count_after_generation - food_count_after_cleanup
+
+        # Log food generation for debugging
+        if foods_consumed > 0 or foods_generated > 0:
+            print(
+                f"[FOOD TRACKING] Before: {food_count_before}, After cleanup: {food_count_after_cleanup}, After generation: {food_count_after_generation}"
+            )
+            print(
+                f"[FOOD TRACKING] Foods consumed: {foods_consumed}, Foods generated: {foods_generated}"
+            )
+
+        return {
+            "movements": movements,
+            "foods_consumed": foods_consumed,
+            "foods_generated": foods_generated,
+        }
 
     def _move_single_ameba(
         self, ameba: Ameba, ameba_id: int
@@ -167,6 +235,10 @@ class MovementHandler:
             ameba._position.adjust_position(
                 self.game.config.play_desk.rows, self.game.config.play_desk.columns
             )
+
+            # Apply energy loss for movement (since core ameba.move doesn't do this)
+            ameba._energy -= self.game.config.ameba.lost_energy_per_move
+
             new_position = (ameba.get_position().row, ameba.get_position().column)
             energy_change = ameba.get_energy() - old_energy
 

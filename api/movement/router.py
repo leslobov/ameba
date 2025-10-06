@@ -15,6 +15,7 @@ from movement.models import (
     GameState,
     Position,
     CellEntity,
+    FoodGenerationInfo,
 )
 from core.out.movement_handler import MovementHandler
 
@@ -130,12 +131,23 @@ async def move_amebas(request: MoveRequest):
                     board_size=state["board_size"],
                 )
 
+            # Process food generation info
+            food_generation = None
+            if result.get("food_generation"):
+                fg = result["food_generation"]
+                food_generation = FoodGenerationInfo(
+                    total_foods_consumed=fg.get("total_foods_consumed", 0),
+                    total_foods_generated=fg.get("total_foods_generated", 0),
+                    net_food_change=fg.get("net_food_change", 0),
+                )
+
             return MoveResponse(
                 success=result["success"],
                 message=result["message"],
                 movements=movements,
                 updated_game_state=updated_game_state,
                 iterations_completed=result["iterations_completed"],
+                food_generation=food_generation,
             )
         else:
             raise HTTPException(

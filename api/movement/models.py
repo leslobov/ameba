@@ -34,12 +34,25 @@ class GameState(BaseModel):
 class MoveRequest(BaseModel):
     """Request to move amebas"""
 
-    game_state: GameState = Field(..., description="Current game state")
+    game_state: Optional[GameState] = Field(
+        None,
+        description="Current game state (optional - will load from config if not provided)",
+    )
     ameba_id: Optional[int] = Field(
         None, description="Specific ameba ID to move (if None, moves all)"
     )
     iterations: int = Field(
         1, ge=1, le=100, description="Number of movement iterations"
+    )
+
+
+class FoodGenerationInfo(BaseModel):
+    """Information about food generation during movement"""
+
+    total_foods_consumed: int = Field(0, description="Total number of foods consumed")
+    total_foods_generated: int = Field(0, description="Total number of foods generated")
+    net_food_change: int = Field(
+        0, description="Net change in food count (generated - consumed)"
     )
 
 
@@ -67,6 +80,9 @@ class MoveResponse(BaseModel):
         None, description="Updated game state after movements"
     )
     iterations_completed: int = Field(0, description="Number of iterations completed")
+    food_generation: Optional[FoodGenerationInfo] = Field(
+        None, description="Information about food generation during movement"
+    )
 
 
 class SimulationRequest(BaseModel):
