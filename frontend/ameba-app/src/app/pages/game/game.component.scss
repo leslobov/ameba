@@ -370,27 +370,27 @@ mat-card-title {
 /* Ameba movement to food animation */
 @keyframes moveToFood {
     0% {
-        transform: scale(1) translate(0, 0);
+        transform: scale(1); // translate(0, 0);
         box-shadow: 0 2px 6px rgba(255, 235, 59, 0.4),
             inset 0 1px 3px rgba(255, 255, 255, 0.6);
     }
 
     30% {
-        transform: scale(1.1) translate(var(--move-x), var(--move-y));
+        transform: scale(1.1); // translate(var(--move-x), var(--move-y));
         box-shadow: 0 4px 10px rgba(255, 235, 59, 0.6),
             0 0 15px rgba(255, 193, 7, 0.4),
             inset 0 2px 5px rgba(255, 255, 255, 0.8);
     }
 
     60% {
-        transform: scale(1.2) translate(var(--move-x), var(--move-y));
+        transform: scale(1.2); // translate(var(--move-x), var(--move-y));
         box-shadow: 0 6px 15px rgba(76, 175, 80, 0.8),
             0 0 25px rgba(76, 175, 80, 0.5),
             inset 0 3px 8px rgba(255, 255, 255, 0.9);
     }
 
     100% {
-        transform: scale(1) translate(var(--move-x), var(--move-y));
+        transform: scale(1); // translate(var(--move-x), var(--move-y));
         box-shadow: 0 4px 12px rgba(76, 175, 80, 0.6),
             0 0 20px rgba(76, 175, 80, 0.4),
             inset 0 2px 6px rgba(255, 255, 255, 0.8);
