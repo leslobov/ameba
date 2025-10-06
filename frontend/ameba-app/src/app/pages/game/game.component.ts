@@ -588,12 +588,16 @@ export class GameComponent implements OnInit, OnDestroy {
 
         if (amebaCell) {
           amebaCell.animationState = 'moving-to-food';
+          // Display the food energy value (50) in animation instead of net energy change (49)
+          // This shows the energy value of the food being consumed, which is more intuitive
+          // The net energy change accounts for movement cost: food_energy(50) - movement_cost(1) = 49
+          const foodEnergy = this.gameConfig()?.play_desk.energy_per_food || 50;
           amebaCell.movementData = {
             fromRow: movement.old_position.row,
             fromCol: movement.old_position.column,
             toRow: movement.new_position.row,
             toCol: movement.new_position.column,
-            energyGain: movement.energy_change
+            energyGain: foodEnergy
           };
         }
       });
