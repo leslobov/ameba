@@ -186,31 +186,26 @@ export class GameComponent implements OnInit, OnDestroy {
     }
 
     try {
-      // Call movement API without game_state to get backend's initial state
-      // Use 1 iteration minimum (API requirement) to get the current state
-      const request: MoveRequest = {
-        iterations: 1
-      } as MoveRequest;
+      console.log('🔍 Requesting backend game state directly from Game class PlayDesk...');
+      const response = await this.movementService.getBackendGameState().toPromise();
 
-      console.log('🔍 Requesting initial state from backend (1 iteration to get current state)...');
-      const response = await this.movementService.moveAmebas(request).toPromise();
-
-      if (response?.success && response.updated_game_state) {
-        console.log('📋 Received initial state from backend:', {
-          amebas: response.updated_game_state.amebas.length,
-          foods: response.updated_game_state.foods.length,
-          boardSize: response.updated_game_state.board_size,
-          backendDimensions: `${response.updated_game_state.board_size.rows}x${response.updated_game_state.board_size.columns}`,
-          configDimensions: `${config.play_desk.rows}x${config.play_desk.columns}`
+      if (response?.success && response.game_state) {
+        console.log('📋 Received backend game state:', {
+          amebas: response.ameba_count,
+          foods: response.food_count,
+          boardSize: response.board_size,
+          backendDimensions: `${response.board_size.rows}x${response.board_size.columns}`,
+          configDimensions: `${config.play_desk.rows}x${config.play_desk.columns}`,
+          message: response.message
         });
 
-        // Update the grid with the backend's initial state
-        this.updateGridFromGameState(response.updated_game_state);
+        // Update the grid with the backend's actual game state from PlayDesk
+        this.updateGridFromGameState(response.game_state);
       } else {
-        throw new Error('Backend did not return valid initial game state');
+        throw new Error('Backend did not return valid game state');
       }
     } catch (error) {
-      console.error('Error loading backend initial state:', error);
+      console.error('Error loading backend game state:', error);
       throw error;
     }
   }
@@ -336,7 +331,7 @@ export class GameComponent implements OnInit, OnDestroy {
   async startGame(): Promise<void> {
     try {
       // Load the actual game state from backend
-      await this.loadActualGameState();
+      // await this.loadActualGameState();
 
       this.isGameRunning.set(true);
       this.snackBar.open('Game started! Loaded actual game state from backend.', 'Close', {

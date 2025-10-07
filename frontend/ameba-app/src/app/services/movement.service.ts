@@ -82,6 +82,18 @@ export interface MovementStatus {
     message: string;
 }
 
+export interface GameStateResponse {
+    success: boolean;
+    message: string;
+    game_state: GameState;
+    ameba_count: number;
+    food_count: number;
+    board_size: {
+        rows: number;
+        columns: number;
+    };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -133,6 +145,20 @@ export class MovementService {
             tap(response => {
                 if (response.success && response.final_game_state) {
                     this.gameStateSubject.next(response.final_game_state);
+                }
+            }),
+            catchError(this.handleError.bind(this))
+        );
+    }
+
+    /**
+     * Get the current backend game state from the Game class PlayDesk
+     */
+    getBackendGameState(): Observable<GameStateResponse> {
+        return this.http.get<GameStateResponse>(`${this.apiBaseUrl}/state`).pipe(
+            tap(response => {
+                if (response.success && response.game_state) {
+                    this.gameStateSubject.next(response.game_state);
                 }
             }),
             catchError(this.handleError.bind(this))

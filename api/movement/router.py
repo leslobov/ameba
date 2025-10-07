@@ -13,6 +13,7 @@ from movement.models import (
     SimulationResponse,
     MovementResult,
     GameState,
+    GameStateResponse,
     Position,
     CellEntity,
     FoodGenerationInfo,
@@ -323,4 +324,58 @@ async def get_movement_status():
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get movement status: {str(e)}"
+        )
+
+
+@router.get("/state", response_model=GameStateResponse)
+async def get_game_state():
+    """Get the current backend game state from the Game class PlayDesk"""
+    try:
+        if not movement_handler.game:
+            raise HTTPException(
+                status_code=404, detail="Game not initialized - check configuration"
+            )
+
+        # Get the current game state from the Game's PlayDesk
+        current_state = movement_handler._get_current_game_state()
+
+        # Convert to Pydantic model for proper API response
+        game_state = GameState(
+            amebas=[
+                CellEntity(
+                    type=ameba["type"],
+                    energy=ameba["energy"],
+                    position=Position(
+                        row=ameba["position"]["row"], column=ameba["position"]["column"]
+                    ),
+                )
+                for ameba in current_state["amebas"]
+            ],
+            foods=[
+                CellEntity(
+                    type=food["type"],
+                    energy=food["energy"],
+                    position=Position(
+                        row=food["position"]["row"], column=food["position"]["column"]
+                    ),
+                )
+                for food in current_state["foods"]
+            ],
+            board_size=current_state["board_size"],
+        )
+
+        return GameStateResponse(
+            success=True,
+            message="Game state retrieved successfully",
+            game_state=game_state,
+            ameba_count=len(current_state["amebas"]),
+            food_count=len(current_state["foods"]),
+            board_size=current_state["board_size"],
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get game state: {str(e)}"
         )

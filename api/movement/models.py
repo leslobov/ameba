@@ -118,3 +118,16 @@ class SimulationResponse(BaseModel):
     statistics: Dict[str, Any] = Field(
         default_factory=dict, description="Simulation statistics"
     )
+
+
+class GameStateResponse(BaseModel):
+    """Response containing the current backend game state"""
+
+    success: bool = Field(..., description="Whether the request was successful")
+    message: str = Field(..., description="Status message")
+    game_state: GameState = Field(..., description="Current game state from backend")
+    ameba_count: int = Field(..., description="Number of amebas on the board")
+    food_count: int = Field(..., description="Number of food items on the board")
+    board_size: Dict[str, int] = Field(
+        ..., description="Board dimensions (rows, columns)"
+    )

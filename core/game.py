@@ -30,6 +30,9 @@ class Game:
         self.play_desk._amebas.append(first_ameba)
         self.play_desk.generate_food()
 
+    def get_play_desk(self) -> PlayDesk:
+        return self.play_desk
+
     def run(self, iterations: int):
         for _ in range(iterations):
             self.do_one_step()
