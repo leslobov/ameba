@@ -1,4 +1,4 @@
-.game-container {
+ce.game-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -148,6 +148,7 @@ mat-card-title {
 .cell-icon {
     display: flex;
     justify-self: center;
+    margin: 0 auto;
 }
 
 .food-icon {
@@ -423,7 +424,7 @@ mat-card-title {
 }
 
 .ameba-energy-gain {
-    animation: energyGain 1s ease-in;
+    animation: energyGain 1s ease-out;
 }
 
 .ameba-cell.energized {
@@ -472,7 +473,7 @@ mat-card-title {
     opacity: 0;
     animation: energyNumber 1.2s ease-out forwards;
     pointer-events: none;
-    z-index: 11;
+    z-index: 121;
 }
 
 @keyframes sparkle {
