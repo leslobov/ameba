@@ -115,8 +115,8 @@ export class GameComponent implements OnInit, OnDestroy {
       const response = await this.http.get<{ success: boolean, data: GameConfig }>('http://127.0.0.1:8000/api/config').toPromise();
       if (response?.success && response.data) {
         this.gameConfig.set(response.data);
-        this.initializeGame();
-        this.snackBar.open('Game configuration loaded successfully!', 'Close', {
+        await this.initializeGame(); // Now awaiting the async initialization
+        this.snackBar.open('Game configuration and initial state loaded successfully!', 'Close', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
@@ -134,50 +134,85 @@ export class GameComponent implements OnInit, OnDestroy {
     }
   }
 
-  initializeGame(): void {
+  async initializeGame(): Promise<void> {
     const config = this.gameConfig();
     if (!config) return;
 
-    const rows = config.play_desk.rows;
-    const columns = config.play_desk.columns;
-    const totalCells = rows * columns;
-    const totalEnergy = config.play_desk.total_energy;
-    const energyPerFood = config.play_desk.energy_per_food;
+    try {
+      // Load actual initial game state from backend instead of random placement
+      console.log('🔄 Loading initial game state from backend configuration...');
+      await this.loadBackendInitialState();
 
-    // Calculate number of food items and amebas
-    const foodCount = Math.floor(totalEnergy / energyPerFood);
-    const amebaCount = Math.max(1, Math.floor(totalCells * 0.05)); // 5% of cells are amebas
+      console.log('✅ Game initialized with backend state:', {
+        amebas: this.getAmebaCount(),
+        foods: this.getFoodCount(),
+        empty: this.getEmptyCount(),
+        totalCells: this.gameGrid().length
+      });
+    } catch (error) {
+      console.error('❌ Failed to load backend initial state, falling back to empty grid:', error);
 
-    // Create empty grid
-    const grid: Cell[] = [];
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < columns; col++) {
-        grid.push({
-          row,
-          col,
-          type: 'empty'
-        });
+      // Fallback: Create empty grid if backend fails
+      const rows = config.play_desk.rows;
+      const columns = config.play_desk.columns;
+      const grid: Cell[] = [];
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          grid.push({
+            row,
+            col,
+            type: 'empty'
+          });
+        }
       }
+
+      this.gameGrid.set(grid);
+
+      this.snackBar.open('Failed to load initial game state from backend. Using empty grid.', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
+  }
+
+  /**
+   * Load the initial game state from backend configuration
+   */
+  private async loadBackendInitialState(): Promise<void> {
+    const config = this.gameConfig();
+    if (!config) {
+      throw new Error('Game configuration not loaded');
     }
 
-    // Randomly place food
-    const availablePositions = [...Array(totalCells).keys()];
-    for (let i = 0; i < foodCount && availablePositions.length > 0; i++) {
-      const randomIndex = Math.floor(Math.random() * availablePositions.length);
-      const cellIndex = availablePositions.splice(randomIndex, 1)[0];
-      grid[cellIndex].type = 'food';
-      grid[cellIndex].energy = energyPerFood;
-    }
+    try {
+      // Call movement API without game_state to get backend's initial state
+      // Use 1 iteration minimum (API requirement) to get the current state
+      const request: MoveRequest = {
+        iterations: 1
+      } as MoveRequest;
 
-    // Randomly place amebas
-    for (let i = 0; i < amebaCount && availablePositions.length > 0; i++) {
-      const randomIndex = Math.floor(Math.random() * availablePositions.length);
-      const cellIndex = availablePositions.splice(randomIndex, 1)[0];
-      grid[cellIndex].type = 'ameba';
-      grid[cellIndex].energy = config.ameba.initial_energy;
-    }
+      console.log('🔍 Requesting initial state from backend (1 iteration to get current state)...');
+      const response = await this.movementService.moveAmebas(request).toPromise();
 
-    this.gameGrid.set(grid);
+      if (response?.success && response.updated_game_state) {
+        console.log('📋 Received initial state from backend:', {
+          amebas: response.updated_game_state.amebas.length,
+          foods: response.updated_game_state.foods.length,
+          boardSize: response.updated_game_state.board_size,
+          backendDimensions: `${response.updated_game_state.board_size.rows}x${response.updated_game_state.board_size.columns}`,
+          configDimensions: `${config.play_desk.rows}x${config.play_desk.columns}`
+        });
+
+        // Update the grid with the backend's initial state
+        this.updateGridFromGameState(response.updated_game_state);
+      } else {
+        throw new Error('Backend did not return valid initial game state');
+      }
+    } catch (error) {
+      console.error('Error loading backend initial state:', error);
+      throw error;
+    }
   }
 
   getCellClass(cell: Cell): string {
@@ -370,14 +405,22 @@ export class GameComponent implements OnInit, OnDestroy {
     });
   }
 
-  resetGame(): void {
+  async resetGame(): Promise<void> {
     this.stopGame();
-    this.initializeGame();
-    this.movementStats.set({ iterations: 0, lastMoveTime: null });
-    this.snackBar.open('Game reset to initial state.', 'Close', {
-      duration: 2000,
-      panelClass: ['info-snackbar']
-    });
+    try {
+      await this.initializeGame();
+      this.movementStats.set({ iterations: 0, lastMoveTime: null });
+      this.snackBar.open('Game reset to backend initial state.', 'Close', {
+        duration: 2000,
+        panelClass: ['info-snackbar']
+      });
+    } catch (error) {
+      console.error('Failed to reset game:', error);
+      this.snackBar.open('Failed to reset game to backend state', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
+    }
   }
 
   /**
