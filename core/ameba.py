@@ -37,22 +37,22 @@ class Ameba(PositionItem, EnergyItem):
 
     def move(self, visible_area: VisibleEntities) -> Position:
         print("---------------init move------------------")
-        print(
-            "Ameba initial position: row= ",
-            self._position.row,
-            " col= ",
-            self._position.column,
-        )
-        visible_energy = visible_area.get_visible_energy()
-        print("visible_area.get_visible_energy() =")
-        for i in range(len(visible_energy)):
-            print(
-                f"{i:02d} :",
-                [
-                    f"{j}: {visible_energy[i][j]:02.0f}"
-                    for j in range(len(visible_energy[i]))
-                ],
-            )
+        # print(
+        #     "Ameba initial position: row= ",
+        #     self._position.row,
+        #     " col= ",
+        #     self._position.column,
+        # )
+        # visible_energy = visible_area.get_visible_energy()
+        # print("visible_area.get_visible_energy() =")
+        # for i in range(len(visible_energy)):
+        #     print(
+        #         f"{i:02d} :",
+        #         [
+        #             f"{j}: {visible_energy[i][j]:02.0f}"
+        #             for j in range(len(visible_energy[i]))
+        #         ],
+        #     )
         prediction_item = self._neural_network.predict(visible_area)
         print("prediction_item =", prediction_item)
         new_position = Position.move_according_prediction(prediction_item)

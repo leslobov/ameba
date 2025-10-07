@@ -19,8 +19,14 @@ class BaseNeuralNetwork(NeuralNetwork):
             os.path.dirname(__file__), "../net_state/base.pth"
         )
         self._generate_nn()
-        if os.path.exists(net_state_path):
-            self._nn.load_state_dict(torch.load(net_state_path))
+        try:
+            if os.path.exists(net_state_path):
+                self._nn.load_state_dict(torch.load(net_state_path))
+        except Exception as e:
+            print(f"Failed to load neural network state: {e}")
+            if os.path.exists(net_state_path):
+                os.remove(net_state_path)
+            print("Starting with a new neural network.")
 
     def predict(self, visible_entities: VisibleEntities) -> Number:
 
@@ -73,9 +79,10 @@ class BaseNeuralNetwork(NeuralNetwork):
 
                 outputs = self._nn(batch_inputs)
                 loss = criterion(outputs, batch_labels)
-                optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                optimizer.zero_grad()
+
                 running_loss += loss.item()
 
             avg_loss = running_loss / num_batches

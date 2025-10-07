@@ -114,8 +114,8 @@ export class ConfigComponent implements OnInit {
                 lost_energy_per_move: [this.defaultConfig.ameba.lost_energy_per_move, [Validators.required, Validators.min(0.1), Validators.max(10)]]
             }),
             neural_network: this.fb.group({
-                initial_hidden_layers: [this.defaultConfig.neural_network.initial_hidden_layers, [Validators.required, Validators.min(1), Validators.max(10)]],
-                initial_neurons_on_layer: [this.defaultConfig.neural_network.initial_neurons_on_layer, [Validators.required, Validators.min(8), Validators.max(256)]]
+                initial_hidden_layers: [this.defaultConfig.neural_network.initial_hidden_layers, [Validators.required, Validators.min(0), Validators.max(10)]],
+                initial_neurons_on_layer: [this.defaultConfig.neural_network.initial_neurons_on_layer, [Validators.required, Validators.min(4), Validators.max(256)]]
             })
         });
     }

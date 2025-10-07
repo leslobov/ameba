@@ -46,10 +46,10 @@ class NeuralNetworkConfig(BaseModel):
     """Neural network configuration model"""
 
     initial_hidden_layers: int = Field(
-        default=1, ge=1, le=10, description="Number of initial hidden layers"
+        default=1, ge=0, le=10, description="Number of initial hidden layers"
     )
     initial_neurons_on_layer: int = Field(
-        default=32, ge=8, le=256, description="Number of neurons per layer"
+        default=32, ge=4, le=256, description="Number of neurons per layer"
     )
 
 
